@@ -6,58 +6,61 @@
     <title>Olympic Medals Globe</title>
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Подключаем D3.js и TopoJSON -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
 </head>
 <body>
 
     <div class="app-container">
-        <!-- Контейнер для глобуса -->
         <div class="globe-container">
             <canvas id="globe-canvas"></canvas>
+
+            <div id="markers-container"></div>
             
-            <!-- Иконка города-хозяина -->
-            <a id="host-city-marker" class="host-city hidden" href="#" target="_blank" title="Читать подробнее">
-                <div class="torch-icon">
-                    <!-- Векторный анимированный огонь -->
-                    <svg width="24" height="24" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <style>
-                            .svg-flame {
-                                transform-origin: 50% 90%;
-                                animation: burn 0.8s infinite ease-in-out alternate;
-                            }
-                            .svg-flame.inner {
-                                animation: burn-inner 0.6s infinite ease-in-out alternate;
-                            }
-                            @keyframes burn {
-                                0% { transform: scale(1) skew(0deg); fill: #ff5722; }
-                                50% { transform: scale(1.05) skew(-2deg); fill: #ff9800; }
-                                100% { transform: scale(0.95) skew(2deg); fill: #ff3d00; }
-                            }
-                            @keyframes burn-inner {
-                                0% { transform: scale(1) translateY(0); fill: #ffeb3b; }
-                                100% { transform: scale(0.8) translateY(-2px); fill: #ffffff; }
-                            }
-                        </style>
-                        <!-- Внешнее пламя -->
-                        <path class="svg-flame" d="M15 2C15 2 7 9 7 16C7 20.4183 10.5817 24 15 24C19.4183 24 23 20.4183 23 16C23 9 15 2 15 2Z"/>
-                        <!-- Внутреннее пламя -->
-                        <path class="svg-flame inner" d="M15 8C15 8 10 13 10 17C10 19.7614 12.2386 22 15 22C17.7614 22 20 19.7614 20 17C20 13 15 8 15 8Z"/>
-                    </svg>
-                </div>
-                <div class="city-name" id="host-city-name">City</div>
-            </a>
-            
+            <div id="current-olympic-title" class="current-olympic-title"></div>
             <div class="controls-container">
-                <button id="btn-dummy-prev" class="control-btn dummy-btn">2000: Сидней</button>
-                <button id="btn-prev" class="control-btn hidden">2002: Солт-Лейк-Сити</button>
-                <button id="btn-next" class="control-btn">2004: Афины</button>
-                <button id="btn-dummy-next" class="control-btn dummy-btn hidden">2006: Турин</button>
+                <button id="btn-dummy-prev" class="control-btn dummy-btn hidden"></button>
+                <button id="btn-prev" class="control-btn hidden"></button>
+                <button id="btn-next" class="control-btn hidden"></button>
+                <button id="btn-dummy-next" class="control-btn dummy-btn hidden"></button>
+            </div>
+            <div id="chart-container" class="dashboard-overlay hidden">
+                
+                <!-- ОБЩИЙ ЗАГОЛОВОК ДАШБОРДА -->
+                <div class="dashboard-header">
+                    <div class="main-title">
+                        Участники и медалисты: 
+                        <span class="color-world">весь мир</span> и 
+                        <span id="main-title-rus" class="color-rus">Россия</span>
+                    </div>
+                    <div class="main-subtitle">Сколько спортсменов приехало на Игры и сколько из них уехало с медалями</div>
+                </div>
+
+                <!-- Блок для всего мира -->
+                <div class="chart-block" id="world-chart-block">
+                    <!-- Маленький заголовок секции -->
+                    <div class="section-label color-world">Весь мир</div>
+                    <svg id="chart-world"></svg>
+                </div>
+
+                <!-- Блок для России/СССР/ОКР -->
+                <div class="chart-block" id="rus-chart-block">
+                    <!-- Маленький заголовок секции (меняется в JS) -->
+                    <div class="section-label color-rus" id="rus-section-title">Россия</div>
+                    <svg id="chart-rus"></svg>
+                </div>
+
+            </div>
+            <div id="articles-container" class="articles-overlay hidden">
+                <div class="dashboard-header">
+                    <div class="main-title">Контекст эпохи</div>
+                </div>
+                
+                <!-- Сюда JS будет вставлять карточки статей -->
+                <div id="articles-content"></div>
             </div>
         </div>
 
-        <!-- Всплывающее меню страны -->
         <div id="tooltip" class="tooltip hidden">
             <h3 id="tt-country" class="tt-title">Страна</h3>
             <div class="tt-medals">

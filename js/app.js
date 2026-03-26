@@ -2,6 +2,149 @@ const globeContainer = document.querySelector('.globe-container');
 const canvas = document.getElementById('globe-canvas');
 const context = canvas.getContext('2d');
 
+// Словарь соответствия: Карта -> Датасет
+const COUNTRY_MAPPER = {
+    "United States of America": ["United States"],
+    "China":["People's Republic of China"],
+    "South Korea": ["Republic of Korea"],
+    "North Korea":["Democratic People's Republic of Korea"],
+    "United Kingdom": ["Great Britain"],
+    "Turkey": ["Türkiye"],
+    "Bahamas": ["The Bahamas"],
+    "Taiwan": ["Chinese Taipei"],
+    "Syria":["Syrian Arab Republic"],
+    "Moldova": ["Republic of Moldova", "Unified Team"],
+    "Saudi Arabia": ["Kingdom of Saudi Arabia"],
+    "Macedonia": ["North Macedonia"],
+    "Dominican Rep.": ["Dominican Republic"],
+    "Iran": ["Islamic Republic of Iran"],
+    
+    "Russia":["Russian Federation", "ROC", "Unified Team"],
+    "Czechia": ["Czechia", "Czechoslovakia"],
+    "Slovakia":["Slovakia", "Czechoslovakia"],
+    
+    "Serbia": ["Serbia", "Serbia and Montenegro"],
+    "Montenegro":["Montenegro", "Serbia and Montenegro"],
+    "Kosovo": ["Kosovo", "Serbia and Montenegro"],
+
+    "Ukraine": ["Ukraine", "Unified Team"],
+    "Belarus": ["Belarus", "Unified Team"],
+    "Kazakhstan": ["Kazakhstan", "Unified Team"],
+    "Uzbekistan":["Uzbekistan", "Unified Team"],
+    "Georgia": ["Georgia", "Unified Team"],
+    "Azerbaijan":["Azerbaijan", "Unified Team"],
+    "Lithuania": ["Lithuania", "Unified Team"],
+    "Latvia": ["Latvia", "Unified Team"],
+    "Estonia":["Estonia", "Unified Team"],
+    "Kyrgyzstan": ["Kyrgyzstan", "Unified Team"],
+    "Tajikistan": ["Tajikistan", "Unified Team"],
+    "Armenia":["Armenia", "Unified Team"],
+    "Turkmenistan": ["Turkmenistan", "Unified Team"]
+};
+
+// Полный словарь перевода всех стран, территорий и исторических команд
+const TRANSLATIONS = {
+    // Исторические и особые команды
+    'Unified Team': 'Объединённая команда (бывшие респулики СССР)',
+    'ROC': 'ОКР',
+    'Independent Olympic Athletes': 'Независимые олимпийские спортсмены',
+    'Czechoslovakia': 'Чехословакия',
+    'Serbia and Montenegro': 'Сербия и Черногория',
+
+    // Страны с особыми/длинными названиями в датасете
+    "People's Republic of China": 'Китай',
+    'Republic of Korea': 'Южная Корея',
+    "Democratic People's Republic of Korea": 'КНДР',
+    'Great Britain': 'Великобритания',
+    'United Kingdom': 'Великобритания',
+    'United States': 'США',
+    'United States of America': 'США',
+    'Islamic Republic of Iran': 'Иран',
+    'Chinese Taipei': 'Тайвань',
+    'Russian Federation': 'Россия',
+    'Hong Kong, China': 'Гонконг',
+    'Syrian Arab Republic': 'Сирия',
+    'Republic of Moldova': 'Молдова',
+    'Kingdom of Saudi Arabia': 'Саудовская Аравия',
+
+    // Общий список стран из датасета и карты
+    'Germany': 'Германия', 'Cuba': 'Куба', 'Spain': 'Испания', 'Hungary': 'Венгрия', 
+    'France': 'Франция', 'Australia': 'Австралия', 'Canada': 'Канада', 'Italy': 'Италия', 
+    'Romania': 'Румыния', 'Japan': 'Япония', 'Bulgaria': 'Болгария', 'Poland': 'Польша', 
+    'Netherlands': 'Нидерланды', 'Kenya': 'Кения', 'Norway': 'Норвегия', 'Türkiye': 'Турция', 
+    'Turkey': 'Турция', 'Indonesia': 'Индонезия', 'Brazil': 'Бразилия', 'Greece': 'Греция', 
+    'Sweden': 'Швеция', 'New Zealand': 'Новая Зеландия', 'Finland': 'Финляндия', 'Denmark': 'Дания', 
+    'Morocco': 'Марокко', 'Ireland': 'Ирландия', 'Ethiopia': 'Эфиопия', 'Algeria': 'Алжир', 
+    'Estonia': 'Эстония', 'Lithuania': 'Литва', 'Switzerland': 'Швейцария', 'Jamaica': 'Ямайка', 
+    'Nigeria': 'Нигерия', 'Latvia': 'Латвия', 'Austria': 'Австрия', 'Namibia': 'Намибия', 
+    'South Africa': 'ЮАР', 'Belgium': 'Бельгия', 'Croatia': 'Хорватия', 'Israel': 'Израиль', 
+    'Mexico': 'Мексика', 'Peru': 'Перу', 'Mongolia': 'Монголия', 'Slovenia': 'Словения', 
+    'Argentina': 'Аргентина', 'Colombia': 'Колумбия', 'Ghana': 'Гана', 'Malaysia': 'Малайзия', 
+    'Pakistan': 'Пакистан', 'Philippines': 'Филиппины', 'Puerto Rico': 'Пуэрто-Рико', 'Qatar': 'Катар', 
+    'Suriname': 'Суринам', 'Thailand': 'Таиланд', 'The Bahamas': 'Багамские Острова', 'Bahamas': 'Багамские Острова',
+    'Ukraine': 'Украина', 'Czechia': 'Чехия', 'Kazakhstan': 'Казахстан', 'Belarus': 'Беларусь', 
+    'Slovakia': 'Словакия', 'Armenia': 'Армения', 'Portugal': 'Португалия', 'Burundi': 'Бурунди', 
+    'Costa Rica': 'Коста-Рика', 'Ecuador': 'Эквадор', 'Uzbekistan': 'Узбекистан', 'Azerbaijan': 'Азербайджан', 
+    'Tonga': 'Тонга', 'Zambia': 'Замбия', 'Georgia': 'Грузия', 'Trinidad and Tobago': 'Тринидад и Тобаго', 
+    'India': 'Индия', 'Mozambique': 'Мозамбик', 'Tunisia': 'Тунис', 'Uganda': 'Уганда', 
+    'Cameroon': 'Камерун', 'Sri Lanka': 'Шри-Ланка', 'Uruguay': 'Уругвай', 'Vietnam': 'Вьетнам', 
+    'Barbados': 'Барбадос', 'Chile': 'Чили', 'Iceland': 'Исландия', 'Kuwait': 'Кувейт', 
+    'Kyrgyzstan': 'Кыргызстан', 'North Macedonia': 'Северная Македония', 'Macedonia': 'Северная Македония',
+    'Egypt': 'Египет', 'Zimbabwe': 'Зимбабве', 'Dominican Republic': 'Доминиканская Республика', 
+    'Dominican Rep.': 'Доминиканская Республика', 'United Arab Emirates': 'ОАЭ', 'Paraguay': 'Парагвай', 
+    'Venezuela': 'Венесуэла', 'Eritrea': 'Эритрея', 'Panama': 'Панама', 'Serbia': 'Сербия', 
+    'Tajikistan': 'Таджикистан', 'Samoa': 'Самоа', 'Singapore': 'Сингапур', 'Sudan': 'Судан', 
+    'Afghanistan': 'Афганистан', 'Mauritius': 'Маврикий', 'Togo': 'Того', 'Bahrain': 'Бахрейн', 
+    'Grenada': 'Гренада', 'Botswana': 'Ботсвана', 'Cyprus': 'Кипр', 'Gabon': 'Габон', 
+    'Guatemala': 'Гватемала', 'Montenegro': 'Черногория', "Côte d'Ivoire": 'Кот-д’Ивуар', 'Fiji': 'Фиджи', 
+    'Jordan': 'Иордания', 'Kosovo': 'Косово', 'Niger': 'Нигер', 'Bermuda': 'Бермудские Острова', 
+    'San Marino': 'Сан-Марино', 'Turkmenistan': 'Туркменистан', 'Burkina Faso': 'Буркина-Фасо', 
+    'Luxembourg': 'Люксембург', 'Liechtenstein': 'Лихтенштейн',
+
+    // Дополнительные страны с глобуса (которых нет в медальном зачете, но на них можно кликнуть)
+    'Tanzania': 'Танзания', 'W. Sahara': 'Западная Сахара', 'Papua New Guinea': 'Папуа — Новая Гвинея', 
+    'Dem. Rep. Congo': 'ДР Конго', 'Somalia': 'Сомали', 'Chad': 'Чад', 'Haiti': 'Гаити', 
+    'Falkland Is.': 'Фолклендские острова', 'Greenland': 'Гренландия', 'Fr. S. Antarctic Lands': 'Французские Южные территории', 
+    'Timor-Leste': 'Восточный Тимор', 'Lesotho': 'Лесото', 'Bolivia': 'Боливия', 'Nicaragua': 'Никарагуа', 
+    'Honduras': 'Гондурас', 'El Salvador': 'Сальвадор', 'Belize': 'Белиз', 'Guyana': 'Гайана', 
+    'Senegal': 'Сенегал', 'Mali': 'Мали', 'Mauritania': 'Мавритания', 'Benin': 'Бенин', 'Guinea': 'Гвинея', 
+    'Guinea-Bissau': 'Гвинея-Бисау', 'Liberia': 'Либерия', 'Sierra Leone': 'Сьерра-Леоне', 
+    'Central African Rep.': 'ЦАР', 'Congo': 'Республика Конго', 'Eq. Guinea': 'Экваториальная Гвинея', 
+    'Malawi': 'Малави', 'eSwatini': 'Эсватини', 'Angola': 'Ангола', 'Lebanon': 'Ливан', 
+    'Madagascar': 'Мадагаскар', 'Palestine': 'Палестина', 'Gambia': 'Гамбия', 'Iraq': 'Ирак', 
+    'Oman': 'Оман', 'Vanuatu': 'Вануату', 'Cambodia': 'Камбоджа', 'Laos': 'Лаос', 'Myanmar': 'Мьянма', 
+    'Bangladesh': 'Бангладеш', 'Bhutan': 'Бутан', 'Nepal': 'Непал', 'Albania': 'Албания', 
+    'New Caledonia': 'Новая Каледония', 'Solomon Is.': 'Соломоновы Острова', 'Brunei': 'Бруней', 
+    'Yemen': 'Йемен', 'Antarctica': 'Антарктида', 'N. Cyprus': 'Северный Кипр', 'Libya': 'Ливия', 
+    'Djibouti': 'Джибути', 'Somaliland': 'Сомалиленд', 'Rwanda': 'Руанда', 'Bosnia and Herz.': 'Босния и Герцеговина', 
+    'S. Sudan': 'Южный Судан', 'Taiwan': 'Тайвань', 'Russia': 'Россия', 'China': 'Китай'
+};
+
+const OCEANS_AND_SEAS =[
+    { name: "Тихий океан", coords: [-150, 0], type: "ocean" },
+    { name: "Тихий океан", coords: [160, 0], type: "ocean" }, // Тихий океан огромный, подпишем с двух сторон
+    { name: "Атлантический океан", coords: [-35, 20], type: "ocean" },
+    { name: "Атлантический океан", coords: [-20, -25], type: "ocean" },
+    { name: "Индийский океан", coords: [80, -20], type: "ocean" },
+    { name: "Северный Ледовитый океан", coords:[0, 85], type: "ocean" },
+    { name: "Южный океан", coords:[90, -60], type: "ocean" },
+    
+    { name: "Средиземное море", coords: [18, 34], type: "sea" },
+    { name: "Карибское море", coords: [-75, 15], type: "sea" },
+    { name: "Аравийское море", coords: [65, 15], type: "sea" },
+    { name: "Филиппинское море", coords: [135, 15], type: "sea" },
+    { name: "Берингово море", coords:[175, 58], type: "sea" },
+    { name: "Охотское море", coords:[150, 52], type: "sea" },
+    { name: "Коралловое море", coords: [160, -15], type: "sea" }
+];
+
+const RUSSIA_PROMO_MARKER = {
+    name: "Россия: вся статистика",
+    coords: [100, 60],
+    flag: "https://upload.wikimedia.org/wikipedia/en/f/f3/Flag_of_Russia.svg",
+    link: "https://your-link-to-article.com"
+};
+
 const style = getComputedStyle(document.documentElement);
 const config = {
     waterColor: style.getPropertyValue('--globe-water').trim(),
@@ -13,50 +156,53 @@ const config = {
     medalMaxColor: style.getPropertyValue('--medal-max-color').trim(),
 };
 
-const state = {
-    width: 0,
-    height: 0,
-    dpr: window.devicePixelRatio || 1,
-    baseScale: 1,
-    zoomK: 1
-};
+const state = { width: 0, height: 0, dpr: window.devicePixelRatio || 1, baseScale: 1, zoomK: 1 };
 
-// Проекция D3
 const projection = d3.geoOrthographic().precision(0.1);
 const path = d3.geoPath().projection(projection).context(context);
-// Отдельный генератор без контекста, нужен для математической проверки видимости (Города)
 const pathString = d3.geoPath().projection(projection);
+
+// SVG векторного огня
+const FLAME_SVG = `
+<svg width="24" height="24" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .svg-flame { transform-origin: 50% 90%; animation: burn 0.8s infinite ease-in-out alternate; }
+        .svg-flame.inner { animation: burn-inner 0.6s infinite ease-in-out alternate; }
+        @keyframes burn {
+            0% { transform: scale(1) skew(0deg); fill: #ff5722; }
+            50% { transform: scale(1.05) skew(-2deg); fill: #ff9800; }
+            100% { transform: scale(0.95) skew(2deg); fill: #ff3d00; }
+        }
+        @keyframes burn-inner {
+            0% { transform: scale(1) translateY(0); fill: #ffeb3b; }
+            100% { transform: scale(0.8) translateY(-2px); fill: #ffffff; }
+        }
+    </style>
+    <path class="svg-flame" d="M15 2C15 2 7 9 7 16C7 20.4183 10.5817 24 15 24C19.4183 24 23 20.4183 23 16C23 9 15 2 15 2Z"/>
+    <path class="svg-flame inner" d="M15 8C15 8 10 13 10 17C10 19.7614 12.2386 22 15 22C17.7614 22 20 19.7614 20 17C20 13 15 8 15 8Z"/>
+</svg>`;
 
 function resizeGlobe() {
     const rect = globeContainer.getBoundingClientRect();
-
     state.width = Math.max(1, Math.round(rect.width));
     state.height = Math.max(1, Math.round(rect.height));
     state.dpr = window.devicePixelRatio || 1;
 
     canvas.style.width = `${state.width}px`;
     canvas.style.height = `${state.height}px`;
-
     canvas.width = Math.round(state.width * state.dpr);
     canvas.height = Math.round(state.height * state.dpr);
 
     context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-
-    /*чтобы у глобуса были отступы от краёв экрана*/
     state.baseScale = Math.min(state.width, state.height) * 0.96 / 2;
-
-    projection
-        .translate([state.width / 2, state.height / 2])
-        .scale(state.baseScale * state.zoomK);
+    projection.translate([state.width / 2, state.height / 2]).scale(state.baseScale * state.zoomK);
 }
 
 resizeGlobe();
 window.addEventListener('resize', resizeGlobe);
 
-// работающие кнопки
 const btnPrev = document.getElementById('btn-prev');
 const btnNext = document.getElementById('btn-next');
-// не работающие кнопки для красоты
 const btnDummyPrev = document.getElementById('btn-dummy-prev');
 const btnDummyNext = document.getElementById('btn-dummy-next');
 
@@ -64,358 +210,625 @@ const tooltip = document.getElementById('tooltip');
 const hostCityMarker = document.getElementById('host-city-marker');
 
 let worldData = null;
-let parsedMedalData = { 2002: {}, 2004: {} };
-let maxMedals = { 2002: 0, 2004: 0 };
-let currentYear = 2002;
+let olympicsList = [];
+let parsedMedalData = {};
+let barChartData = [];
+let articlesData = {};
+let maxMedals = {};
+let rusSpecialElement = null;
+let currentIndex = 0;
 let isAnimating = false;
-let particles =[];
+let particles = [];
 let hoveredCountry = null;
-let lastHoveredName = "";
 let currentRotate =[0, 0, 0];
 let targetRotate = [0, 0, 0];
 
-const olympicsInfo = {
-    2002: { name: "Солт-Лейк-Сити", coords:[-111.8910, 40.7608], link: "salt-lake.html" },
-    2004: { name: "Афины", coords:[23.7275, 37.9838], link: "athens.html" }
-};
+function getMedalData(topoName, currentEdition) {
+    const datasetNames = COUNTRY_MAPPER[topoName] || [topoName];
+    const editionData = parsedMedalData[currentEdition] || {};
 
-// МАППЕР
-function getMedalData(topoName, year) {
-    let searchName = topoName;
-
-    // 1. Приводим современные названия из карты к названиям в ваших данных
-    const aliases = {
-        "United States of America": "United States",
-        "United Kingdom": "Great Britain",
-        "South Korea": "Republic of Korea",
-        "North Korea": "Democratic People's Republic of Korea",
-        "Taiwan": "Chinese Taipei",
-        "Czech Republic": "Czechia",
-        "The Bahamas": "The Bahamas",
-        "Turkey": "Türkiye"
-    };
-
-    if (aliases[topoName]) searchName = aliases[topoName];
-
-    // 2. Обработка исторических изменений (Сербия, Черногория)
-    // На карте это разные страны, но в 2004 они были "Serbia and Montenegro"
-    const balkanStates = ["Serbia", "Montenegro", "Kosovo"];
-    if (balkanStates.includes(topoName)) {
-        if (year === 2004) searchName = "Serbia and Montenegro";
+    for (const name of datasetNames) {
+        if (editionData[name]) {
+            return { 
+                ...editionData[name], 
+                teamName: name,
+                teamNameRu: TRANSLATIONS[name] || name // Переводим название
+            };
+        }
     }
 
-    // 3. Китай и Гонконг (если нужно подсвечивать отдельно)
-    if (topoName === "Hong Kong") searchName = "Hong Kong, China";
-
-    // Ищем данные
-    let result = parsedMedalData[year][searchName];
-
-    // Если не нашли по имени, попробуем еще раз, вдруг в данных страна называется "Russia" вместо "Russian Federation"
-    if (!result && topoName === "Russia") result = parsedMedalData[year]["Russian Federation"];
-    if (!result && topoName === "China") result = parsedMedalData[year]["People's Republic of China"];
-
-    return result || { gold: 0, silver: 0, bronze: 0, total: 0, isParticipant: false };
+    // Если нет медалей
+    return { 
+        gold: 0, silver: 0, bronze: 0, total: 0, 
+        isParticipant: false, 
+        teamName: topoName,
+        teamNameRu: TRANSLATIONS[topoName] || topoName
+    };
 }
 
 async function init() {
     try {
+        olympicsList = await d3.json("data/hosts.json");
+        const markersContainer = document.getElementById('markers-container');
+
+        barChartData = await d3.json("data/results.json");
+        articlesData = await d3.json("data/articles.json");
+
+        // === ВЫНЕСЛИ СОЗДАНИЕ МАРКЕРА РОССИИ ИЗ ЦИКЛА (делаем 1 раз) ===
+        const promoEl = document.createElement('a');
+        promoEl.className = 'special-rus-marker hidden';
+        promoEl.href = RUSSIA_PROMO_MARKER.link;
+        promoEl.target = '_blank';
+        promoEl.innerHTML = `
+            <div class="promo-container">
+                <img src="${RUSSIA_PROMO_MARKER.flag}" alt="RU" class="promo-flag">
+                <div class="promo-label">${RUSSIA_PROMO_MARKER.name}</div>
+            </div>
+        `;
+        markersContainer.appendChild(promoEl);
+        rusSpecialElement = promoEl;
+
+        // Тепер цикл только для городов
+        olympicsList.forEach((oly, i) => {
+            parsedMedalData[oly.edition] = {};
+            maxMedals[oly.edition] = 0;
+            
+            const el = document.createElement('a');
+            el.className = 'host-city hidden';
+            el.href = oly.link || '#';
+            el.target = '_blank';
+
+            const flagHtml = (oly.flag && oly.flag.trim() !== "") 
+                ? `<img class="host-flag" src="${oly.flag}" alt="Flag">` 
+                : `<div class="host-flag" style="background: #ccc;"></div>`;
+
+            el.innerHTML = `
+                ${flagHtml}
+                <div class="torch-icon">${FLAME_SVG}</div>
+                <div class="city-name">${oly.city}</div>
+            `;
+
+            el.addEventListener('click', (e) => {
+                const isFlagClick = e.target.closest('.host-flag');
+                const isTorchClick = e.target.closest('.torch-icon');
+                if (isFlagClick && i !== currentIndex) {
+                    e.preventDefault();
+                    switchOlympic(i, true);
+                } else if (isTorchClick && i === currentIndex) {
+                } else {
+                    e.preventDefault();
+                }
+            });
+
+            markersContainer.appendChild(el);
+            oly.domElement = el;
+        });
+
+        // ... далее загрузка топологии и медалей (без изменений) ...
         const topology = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
         worldData = topojson.feature(topology, topology.objects.countries);
         
-        const csvData = await d3.csv("data/Olympic_Games_Medal_Tally.csv");
-        csvData.forEach(row => {
-            const year = parseInt(row.year || row.Year);
-            if (year === 2002 || year === 2004) {
+        const medalData = await d3.json("data/olympicGamesMedalTally.json");
+        
+        medalData.forEach(row => {
+            const edition = row.edition;
+            if (edition && parsedMedalData[edition]) {
                 const country = row.country || row.Country;
-                const total = parseInt(row.total || row.Total || 0);
-                parsedMedalData[year][country] = {
-                    gold: parseInt(row.gold || row.Gold || 0), silver: parseInt(row.silver || row.Silver || 0),
-                    bronze: parseInt(row.bronze || row.Bronze || 0), total: total, isParticipant: true
+                const total = row.total || row.Total || 0;
+                parsedMedalData[edition][country] = {
+                    gold: row.gold || row.Gold || 0, 
+                    silver: row.silver || row.Silver || 0,
+                    bronze: row.bronze || row.Bronze || 0, 
+                    total: total, 
+                    isParticipant: true
                 };
-                if (total > maxMedals[year]) maxMedals[year] = total;
+                if (total > maxMedals[edition]) maxMedals[edition] = total;
             }
         });
 
-        const initialCity = olympicsInfo[currentYear].coords;
+        const initialCity = olympicsList[currentIndex].coords;
         const initialRot = [-initialCity[0], -initialCity[1], 0];
-        
-        // Задаем начальные значения для сглаживания
-        currentRotate = [...initialRot];
-        targetRotate = [...initialRot];
+        currentRotate = [...initialRot]; targetRotate = [...initialRot];
         projection.rotate(currentRotate);
 
+        setActiveMarker(currentIndex);
         setupEvents();
         updateUI();
+
+        document.getElementById('chart-container').classList.remove('hidden');
+        renderBarChart(olympicsList[currentIndex].edition);
+        renderArticles(olympicsList[currentIndex].edition);
+        
         requestAnimationFrame(renderLoop);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Ошибка:", e); }
+}
+
+function renderBarChart(selectedEdition) {
+    if (!barChartData) return;
+
+    // 1. Определяем имя России для этой версии игр
+    const datasetNames = COUNTRY_MAPPER["Russia"];
+    const editionMedals = parsedMedalData[selectedEdition] || {};
+    let currentRusName = "Russian Federation";
+    for (const name of datasetNames) {
+        if (editionMedals[name]) { currentRusName = name; break; }
+    }
+    const rusDisplayName = TRANSLATIONS[currentRusName] || currentRusName;
+
+    // 2. Агрегация данных
+    const data = barChartData.filter(d => d.edition === selectedEdition);
+    const nested = d3.rollup(data, v => {
+        let wT = 0, wM = 0, rT = 0, rM = 0;
+        v.forEach(d => {
+            wT += d.total_participants; wM += d.medalists;
+            if (d.country === currentRusName) {
+                rT += d.total_participants; rM += d.medalists;
+            }
+        });
+        return { world: {t: wT, m: wM}, rus: {t: rT, m: rM} };
+    }, d => d.sport);
+
+    // 3. Формируем ДВА независимых массива данных
+    
+    // Топ-15 для мира (сортировка по кол-ву участников в мире)
+    const worldRows = Array.from(nested, ([sport, values]) => ({ 
+        sport, t: values.world.t, m: values.world.m 
+    }))
+    .filter(d => d.t > 0)
+    .sort((a, b) => d3.descending(a.t, b.t))
+    .slice(0, 15); 
+
+    // Топ-15 для России (сортировка по кол-ву участников от России)
+    const rusRows = Array.from(nested, ([sport, values]) => ({ 
+        sport, t: values.rus.t, m: values.rus.m 
+    }))
+    .filter(d => d.t > 0)
+    .sort((a, b) => d3.descending(a.t, b.t))
+    .slice(0, 15);
+
+    // 4. Обновляем заголовки в HTML
+    document.getElementById("main-title-rus").innerText = rusDisplayName;
+    document.getElementById("rus-section-title").innerText = rusDisplayName;
+
+    // 5. Отрисовываем графики независимо друг от друга
+    drawSubChart("#chart-world", worldRows, "#334155", "#60a5fa"); // Синие оттенки для мира
+    drawSubChart("#chart-rus", rusRows, "rgba(239, 68, 68, 0.2)", "#ef4444"); // Красные оттенки для РФ
+}
+
+// Универсальная функция для отрисовки одного барчарта
+function drawSubChart(svgSelector, rows, bgColor, fgColor) {
+    const svg = d3.select(svgSelector);
+    
+    // Убрали лишние отступы сверху/снизу, оставили место справа для внешних цифр
+    const margin = { top: 0, right: 25, bottom: 0, left: 150 }; 
+    const rowHeight = 20; 
+    const width = 350;
+    
+    const height = Math.max(rows.length * rowHeight + margin.top + margin.bottom, 40);
+
+    svg.attr("viewBox", [0, 0, width, height]).attr("height", height);
+    svg.selectAll("*").remove();
+
+    if (rows.length === 0) {
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height / 2)
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "middle")
+            .attr("fill", "#64748b") // Цвет текста прямо тут
+            .attr("font-size", "12px")
+            .text("Нет данных об участии");
+        return;
+    }
+
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(rows, d => d.t) || 1])
+        .range([margin.left, width - margin.right]);
+
+    const y = d3.scaleBand()
+        .domain(rows.map(d => d.sport))
+        .range([margin.top, height - margin.bottom])
+        .paddingInner(0.2);
+
+    const row = svg.selectAll(".sport-row")
+        .data(rows).join("g")
+        .attr("transform", d => `translate(0, ${y(d.sport)})`);
+
+    // 1. Название спорта (цвет перенесен из CSS сюда)
+    row.append("text")
+        .attr("x", margin.left - 8)
+        .attr("y", y.bandwidth() / 2)
+        .attr("text-anchor", "end")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "#11151b") // Темный цвет текста
+        .attr("font-size", "11px")
+        .attr("font-weight", "600")
+        .text(d => d.sport);
+
+    // 2. Фон (Всего участников - длинная полоса)
+    row.append("rect")
+        .attr("x", margin.left)
+        .attr("y", 0)
+        .attr("width", d => Math.max(0, x(d.t) - margin.left))
+        .attr("height", y.bandwidth())
+        .attr("fill", bgColor)
+        .attr("rx", 2);
+
+    // 3. Медалисты (Заполненная часть)
+    row.append("rect")
+        .attr("x", margin.left)
+        .attr("y", 0)
+        .attr("width", d => Math.max(0, x(d.m) - margin.left))
+        .attr("height", y.bandwidth())
+        .attr("fill", fgColor)
+        .attr("rx", 2);
+
+    // 4. ЧИСЛО ВНУТРИ (Медалисты)
+    row.append("text")
+        .attr("x", d => x(d.m) - 2.5) // Прижимаем к правому краю цветного бара
+        .attr("y", y.bandwidth() / 2 + 3.5) // Центрируем по вертикали
+        .attr("text-anchor", "end")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "#ffffff") // Белый текст
+        .attr("font-size", "9px")
+        .attr("font-weight", "bold")
+        // Показываем, только если медалистов > 0 и ширина бара > 12px (чтобы цифра влезла)
+        .text(d => (d.m > 0 && (x(d.m) - margin.left) > 12) ? d.m : "");
+
+    // 5. ЧИСЛО СНАРУЖИ (Всего участников)
+    row.append("text")
+        .attr("x", d => x(d.t) + 4) // Выносим правее от края всего бара
+        .attr("y", y.bandwidth() / 2 + 3.5)
+        .attr("text-anchor", "start")
+        .attr("alignment-baseline", "middle")
+        .attr("fill", "#64748b") // Серый цвет
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .text(d => d.t);
+}
+
+function renderArticles(selectedEdition) {
+    const container = document.getElementById('articles-content');
+    if (!container || !articlesData) return;
+
+    const data = articlesData[selectedEdition];
+    if (!data) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 12px;">Нет статей для этого года</p>';
+        return;
+    }
+
+    // 1. Формируем HTML для мировой статьи
+    let html = `
+        <div class="article-group">
+            <div class="section-label color-world" style="margin-top: 8px;">Мир</div>
+            <a href="${data.world.link}" target="_blank" class="article-card">
+                <div class="article-title">${data.world.title}</div>
+                <div class="article-annotation">${data.world.annotation}</div>
+            </a>
+        </div>
+    `;
+
+    // 2. Формируем HTML для статей по России
+    html += `
+        <div class="article-group">
+            <div class="section-label color-rus" style="margin-top: 16px;">Россия</div>
+            <div class="rus-articles-list">
+    `;
+
+    data.russia.forEach(art => {
+        html += `
+            <a href="${art.link}" target="_blank" class="article-card">
+                <div class="article-title">${art.title}</div>
+                <div class="article-annotation">${art.annotation}</div>
+            </a>
+        `;
+    });
+
+    html += `</div></div>`;
+    
+    container.innerHTML = html;
+    
+    // Показываем контейнер, если он был скрыт
+    document.getElementById('articles-container').classList.remove('hidden');
+}
+
+function drawOceanLabels() {
+    // Настройки шрифта
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+
+    OCEANS_AND_SEAS.forEach(water => {
+        // Проверяем, находится ли эта точка на видимой стороне глобуса
+        const isVisible = pathString({type: "Point", coordinates: water.coords});
+        
+        if (isVisible) {
+            const [x, y] = projection(water.coords);
+            
+            // Если океан — шрифт крупнее, если море — мельче
+            const fontSize = water.type === "ocean" ? 14 : 10;
+            context.font = `italic 600 ${fontSize}px sans-serif`;
+
+            // 1. Белая полупрозрачная обводка (чтобы текст читался даже поверх линий суши)
+            context.lineWidth = 2.5;
+            context.strokeStyle = "rgba(255, 255, 255, 0.6)";
+            context.strokeText(water.name, x, y);
+
+            // 2. Сам цвет текста (мягкий сине-серый цвет воды)
+            context.fillStyle = "rgba(100, 143, 186, 0.85)";
+            context.fillText(water.name, x, y);
+        }
+    });
 }
 
 function drawGlobe() {
     context.clearRect(0, 0, state.width, state.height);
     
-    // Вода
     context.beginPath(); path({type: "Sphere"});
     context.fillStyle = config.waterColor; context.fill();
     context.lineWidth = 2; context.strokeStyle = config.outlineColor; context.stroke();
 
-    if (!worldData) return;
+    if (!worldData || olympicsList.length === 0) return;
 
-    const max = maxMedals[currentYear] || 1;
+    const currentEdition = olympicsList[currentIndex].edition;
+    const max = maxMedals[currentEdition] || 1;
     const colorScale = d3.scaleLinear().domain([1, max]).range([config.medalMinColor, config.medalMaxColor]);
 
     worldData.features.forEach(feature => {
         context.beginPath(); path(feature);
         
-        const stats = getMedalData(feature.properties.name, currentYear);
-        let fillColor = config.landColor; // Страна не участвовала (СЕРАЯ)
+        const stats = getMedalData(feature.properties.name, currentEdition);
+        let fillColor = config.landColor; 
         
         if (stats.total > 0) fillColor = colorScale(stats.total);
-        else if (stats.isParticipant) fillColor = config.participantColor; // Участвовала, но без медалей (СВЕТЛАЯ)
+        else if (stats.isParticipant) fillColor = config.participantColor;
 
-        // if (stats.total === 0 && !stats.isParticipant) {
-        //     console.log("Не сопоставлено:", feature.properties.name);
-        // }
-
-        // ПОДСВЕТКА ПРИ НАВЕДЕНИИ
         if (feature === hoveredCountry) {
             context.fillStyle = d3.color(fillColor).brighter(0.4);
-            context.lineWidth = 1.5;
-            context.strokeStyle = "#1e293b"; // Темная обводка
-            // Слой выводится поверх остальных, поэтому обводку хорошо видно
+            context.lineWidth = 1.5; context.strokeStyle = "#1e293b"; 
         } else {
             context.fillStyle = fillColor;
-            context.lineWidth = 0.5;
-            context.strokeStyle = config.borderColor;
+            context.lineWidth = 0.5; context.strokeStyle = config.borderColor;
         }
         
         context.fill(); context.stroke();
     });
+    drawOceanLabels();
 }
 
-function updateCityMarker() {
-    const coords = olympicsInfo[currentYear].coords;
-    // Проверка, находится ли город на видимой стороне полусферы
-    const isVisible = pathString({type: "Point", coordinates: coords});
+
+
+function setActiveMarker(index) {
+    olympicsList.forEach((oly, i) => {
+        if (i === index) {
+            oly.domElement.classList.add('active');
+        } else {
+            oly.domElement.classList.remove('active');
+        }
+    });
+}
+
+function updateCityMarkers() {
+    if (olympicsList.length === 0) return;
     
-    if (isVisible && !isAnimating) {
-        const [x, y] = projection(coords);
-        hostCityMarker.classList.remove('hidden');
-        hostCityMarker.style.left = `${x}px`;
-        hostCityMarker.style.top = `${y}px`;
-        document.getElementById('host-city-name').innerText = olympicsInfo[currentYear].name;
-        hostCityMarker.href = olympicsInfo[currentYear].link;
-    } else {
-        hostCityMarker.classList.add('hidden');
+    // 1. Обновляем города
+    olympicsList.forEach((oly) => {
+        const coords = oly.coords;
+        const isVisible = pathString({type: "Point", coordinates: coords});
+        const el = oly.domElement;
+        
+        if (isVisible) {
+            const [x, y] = projection(coords);
+            el.classList.remove('hidden');
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 2. Обновляем маркер России (ОДИН РАЗ, вне цикла городов)
+    if (rusSpecialElement) {
+        const coords = RUSSIA_PROMO_MARKER.coords;
+        const isVisible = pathString({type: "Point", coordinates: coords});
+        
+        if (isVisible) {
+            const [x, y] = projection(coords);
+            rusSpecialElement.classList.remove('hidden');
+            rusSpecialElement.style.left = `${x}px`;
+            rusSpecialElement.style.top = `${y}px`;
+        } else {
+            rusSpecialElement.classList.add('hidden');
+        }
     }
 }
 
 function updateAndDrawParticles() {
-    // Включаем эффект свечения огня (цвета будут суммироваться, создавая яркий центр)
-    // context.globalCompositeOperation = 'lighter';
-    
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.life -= p.decay;
         
-        if (p.life <= 0) { 
-            particles.splice(i, 1); 
-            continue; 
-        }
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
         
-        // 1. Получаем текущие экранные координаты для этой точки на глобусе
         const coords = projection(p.coords);
-        const isVisible = pathString({type: "Point", coordinates: p.coords});
-        
-        if (coords && isVisible) {
+        if (coords && pathString({type: "Point", coordinates: p.coords})) {
             context.beginPath(); 
-            // Рисуем кружок, который уменьшается к концу жизни
             context.arc(coords[0] + p.offsetX, coords[1] + p.offsetY, Math.max(0.1, p.life * p.size), 0, Math.PI * 2);
-            
-            // 2. Цвета пламени: от белого (начало) к желтому, оранжевому и прозрачному (конец)
-            let r = 255;
-            let g = Math.floor(p.life * 220); // Быстро уходит в ноль (краснеет)
-            let b = Math.floor(Math.pow(p.life, 3) * 100); // Белая вспышка только в самом начале
-            
-            context.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.life})`; 
+            context.fillStyle = `rgba(255, ${Math.floor(p.life * 220)}, ${Math.floor(Math.pow(p.life, 3) * 100)}, ${p.life})`; 
             context.fill();
-            
-            // Легкое поднятие частиц "вверх" по экрану (эффект дыма/ветра)
             p.offsetY -= 0.5; 
         }
     }
-    
-    // Обязательно выключаем эффект, иначе глобус тоже начнет светиться
     context.globalCompositeOperation = 'source-over';
 }
 
 function renderLoop() {
-    // Включаем сглаживание, только если глобус не летит по кнопке
     if (!isAnimating) {
-        // Формула LERP (Линейная интерполяция)
-        // Коэффициент 0.15 означает "каждый кадр проходить 15% оставшегося пути"
         currentRotate[0] += (targetRotate[0] - currentRotate[0]) * 0.15;
         currentRotate[1] += (targetRotate[1] - currentRotate[1]) * 0.15;
-        
         projection.rotate(currentRotate);
     }
-
     drawGlobe(); 
     updateAndDrawParticles(); 
-    updateCityMarker();
+    updateCityMarkers();
     requestAnimationFrame(renderLoop);
 }
 
 function setupEvents() {
-    // 1. ВРАЩЕНИЕ (DRAG)
     const drag = d3.drag()
         .on("start", () => { canvas.style.cursor = 'grabbing'; })
         .on("drag", (event) => {
             if (isAnimating) return;
-            
-            // Высчитываем, сколько градусов в 1 пикселе при текущем зуме
-            // projection.scale() — это радиус глобуса в пикселях
             const degPerPixel = 360 / (2 * Math.PI * projection.scale());
-            
-            // Меняем не текущее вращение, а целевое (куда глобус ДОЛЖЕН докрутиться)
             targetRotate[0] += event.dx * degPerPixel;
-            targetRotate[1] -= event.dy * degPerPixel;
-            
-            // Ограничитель: не даем глобусу перевернуться вверх ногами (зажатие полюсов)
-            targetRotate[1] = Math.max(-90, Math.min(90, targetRotate[1]));
+            targetRotate[1] = Math.max(-90, Math.min(90, targetRotate[1] - event.dy * degPerPixel));
         })
         .on("end", () => { canvas.style.cursor = hoveredCountry ? 'pointer' : 'grab'; });
 
-    // 2. ЗУМ (Колесиком мыши)
-    const zoom = d3.zoom()
-        .scaleExtent([1, 2])
-        .on("zoom", (event) => {
-            if (isAnimating) return;
-            state.zoomK = event.transform.k;
-            projection.scale(state.baseScale * state.zoomK);
-        });
+    const zoom = d3.zoom().scaleExtent([1, 2]).on("zoom", (event) => {
+        if (isAnimating) return;
+        state.zoomK = event.transform.k;
+        projection.scale(state.baseScale * state.zoomK);
+    });
 
     d3.select(canvas).call(drag).call(zoom);
 
-    // 3. hover и тултип
-    // Лисенер для подсветки страны при наведении
     canvas.addEventListener('mousemove', (event) => {
         if (isAnimating) return;
         const rect = canvas.getBoundingClientRect();
         const coords = projection.invert([event.clientX - rect.left, event.clientY - rect.top]);
-        
-        if (!coords) { 
-            hoveredCountry = null; 
-            canvas.style.cursor = 'grab';
-            return; 
-        }
+        if (!coords) { hoveredCountry = null; canvas.style.cursor = 'grab'; return; }
 
         hoveredCountry = worldData.features.find(f => d3.geoContains(f, coords));
-        
-        if (hoveredCountry) {
-            canvas.style.cursor = 'pointer';
-        } else {
-            canvas.style.cursor = 'grab';
-            lastHoveredName = ""; // Сбрасываем, чтобы при следующем клике на ту же страну всё сработало
-        }
+        canvas.style.cursor = hoveredCountry ? 'pointer' : 'grab';
     });
 
-    // Лисенер для вызова тултипа при клике
     canvas.addEventListener('click', (event) => {
-        if (isAnimating) return;
+        if (isAnimating || olympicsList.length === 0) return;
         const rect = canvas.getBoundingClientRect();
         const coords = projection.invert([event.clientX - rect.left, event.clientY - rect.top]);
-        
         if (!coords) { hideTooltip(); return; }
 
         const clickedCountry = worldData.features.find(f => d3.geoContains(f, coords));
-        
         if (clickedCountry) {
-            const name = clickedCountry.properties.name;
-            const stats = getMedalData(name, currentYear);
+            const mapName = clickedCountry.properties.name;
+            // Передаем .edition (например, "2008 Summer Olympics"), чтобы достать данные нужного года
+            const stats = getMedalData(mapName, olympicsList[currentIndex].edition);
             
-            updateTooltipData(name, stats);
+            // Если перевода нет, он выведет английское название (на всякий случай)
+            const displayName = stats.teamNameRu; 
             
-            // Тултип появляется в месте клика
+            document.getElementById('tt-country').innerText = stats.isParticipant ? displayName : displayName + " (Нет данных)";
+            document.getElementById('tt-gold').innerText = stats.gold;
+            document.getElementById('tt-silver').innerText = stats.silver;
+            document.getElementById('tt-bronze').innerText = stats.bronze;
+            document.getElementById('tt-total').innerText = stats.total;
+            
             tooltip.classList.remove('hidden');
             tooltip.style.left = `${event.clientX}px`;
             tooltip.style.top = `${event.clientY}px`;
-        } else {
-            hideTooltip();
-        }
+        } else { hideTooltip(); }
     });
 
     canvas.addEventListener('mouseout', () => { hoveredCountry = null; hideTooltip(); });
-    btnPrev.addEventListener('click', () => switchYear(2002));
-    btnNext.addEventListener('click', () => switchYear(2004));
-}
-
-function updateTooltipData(countryName, stats) {
-    document.getElementById('tt-country').innerText = countryName;
-    document.getElementById('tt-gold').innerText = stats.gold;
-    document.getElementById('tt-silver').innerText = stats.silver;
-    document.getElementById('tt-bronze').innerText = stats.bronze;
-    document.getElementById('tt-total').innerText = stats.total;
     
-    // Подсказка, если страна не участвовала
-    if (!stats.isParticipant) {
-        document.getElementById('tt-country').innerText = countryName + " (Нет данных)";
-    }
+    btnPrev.addEventListener('click', () => { if (currentIndex > 0) switchOlympic(currentIndex - 1); });
+    btnNext.addEventListener('click', () => { if (currentIndex < olympicsList.length - 1) switchOlympic(currentIndex + 1); });
 }
 
 function hideTooltip() { tooltip.classList.add('hidden'); }
 
 function updateUI() {
-    
-    // Если текущий год 2002:
-    btnPrev.classList.toggle('hidden', currentYear === 2002);
-    btnDummyPrev.classList.toggle('hidden', currentYear !== 2002);
-    
-    // Если текущий год 2004:
-    btnNext.classList.toggle('hidden', currentYear === 2004);
-    btnDummyNext.classList.toggle('hidden', currentYear !== 2004);
+    if (olympicsList.length === 0) return;
+
+    document.getElementById('current-olympic-title').innerHTML = `${olympicsList[currentIndex].city}`;
+
+    btnDummyPrev.classList.add('hidden');
+    btnPrev.classList.add('hidden');
+    btnNext.classList.add('hidden');
+    btnDummyNext.classList.add('hidden');
+
+    // === ЛЕВАЯ КНОПКА (НАЗАД) ===
+    if (currentIndex > 0) {
+        // Добавляем красивую стрелочку влево (&larr;)
+        btnPrev.innerHTML = `&larr; ${olympicsList[currentIndex - 1].city}`;
+        btnPrev.classList.remove('hidden');
+    } else {
+        btnDummyPrev.innerHTML = `&larr; Сеул 1988`; 
+        btnDummyPrev.classList.remove('hidden');
+    }
+
+    // === ПРАВАЯ КНОПКА (ВПЕРЁД) ===
+    if (currentIndex < olympicsList.length - 1) {
+        // Добавляем красивую стрелочку вправо (&rarr;)
+        btnNext.innerHTML = `${olympicsList[currentIndex + 1].city} &rarr;`;
+        btnNext.classList.remove('hidden');
+    } else {
+        btnDummyNext.innerHTML = `Париж 2024 &rarr;`;
+        btnDummyNext.classList.remove('hidden');
+    }
 }
 
-function switchYear(targetYear) {
-    if (isAnimating || currentYear === targetYear) return;
-    isAnimating = true; hideTooltip(); hoveredCountry = null;
+function switchOlympic(targetIndex, isDirectClick = false) {
+    if (isAnimating || currentIndex === targetIndex) return;
+
+    if (isDirectClick) {
+        // === МГНОВЕННЫЙ ПЕРЕХОД ===
+        // Если клик по флагу, меняем город сразу без анимации камеры и огня
+        hideTooltip(); 
+        hoveredCountry = null;
+        currentIndex = targetIndex;
+        
+        const endCoords = olympicsList[targetIndex].coords;
+        const newRot = [-endCoords[0], -endCoords[1], 0];
+        
+        // Моментально поворачиваем глобус
+        projection.rotate(newRot);
+        currentRotate = [...newRot]; 
+        targetRotate = [...newRot];
+        
+        setActiveMarker(currentIndex); // Включаем огонёк на новом месте
+        updateUI(); // Обновляем текст на кнопках
+        renderBarChart(olympicsList[currentIndex].edition);
+        renderArticles(olympicsList[currentIndex].edition);
+        return; // Выходим отсюда, чтобы не запускать d3.transition
+    }
+
+    // === ПЛАВНАЯ АНИМАЦИЯ ===
+    // (Работает только при клике на кнопки "Вперёд"/"Назад")
+    isAnimating = true; 
+    hideTooltip(); 
+    hoveredCountry = null;
     
-    const startCoords = olympicsInfo[currentYear].coords;
-    const endCoords = olympicsInfo[targetYear].coords;
-    
+    const startCoords = olympicsList[currentIndex].coords;
+    const endCoords = olympicsList[targetIndex].coords;
     const interpolateCoords = d3.geoInterpolate(startCoords, endCoords);
 
     d3.transition().duration(2000).ease(d3.easeCubicInOut).tween("flight", () => {
         return (t) => {
             const currentPoint = interpolateCoords(t);
-            
-            // СОЗДАЕМ newRot: вычисляем текущее положение вращения
             const newRot = [-currentPoint[0], -currentPoint[1], 0];
             
-            // Применяем вращение к проекции
             projection.rotate(newRot);
+            currentRotate = [...newRot]; targetRotate = [...newRot];
             
-            // СИНХРОНИЗИРУЕМ переменные плавности (LERP), чтобы глобус не дергался после прилета
-            currentRotate = [...newRot];
-            targetRotate = [...newRot];
+            if (t === 0) setActiveMarker(-1); 
             
-            // Создание частиц шлейфа
             if (pathString({type: "Point", coordinates: currentPoint})) {
                 for (let i = 0; i < 4; i++) { 
                     particles.push({
-                        coords:[...currentPoint], 
-                        offsetX: (Math.random() - 0.5) * 12,
-                        offsetY: (Math.random() - 0.5) * 12,
-                        life: 1.0, 
-                        decay: 0.015 + Math.random() * 0.02,
-                        size: Math.random() * 6 + 2 
+                        coords:[...currentPoint], offsetX: (Math.random() - 0.5) * 12, offsetY: (Math.random() - 0.5) * 12,
+                        life: 1.0, decay: 0.015 + Math.random() * 0.02, size: Math.random() * 6 + 2 
                     });
                 }
             }
         };
     }).on("end", () => {
         isAnimating = false; 
-        currentYear = targetYear; 
+        currentIndex = targetIndex; 
+        setActiveMarker(currentIndex);
         updateUI();
+        renderBarChart(olympicsList[currentIndex].edition);
+        renderArticles(olympicsList[currentIndex].edition);
     });
 }
 

@@ -1,0 +1,172 @@
+[
+    {
+        "edition":"1992 Winter Olympics",
+        "city":"❄️ Альбервиль 1992",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/FRA.png",
+        "coords":[
+            5.9069,
+            45.9011
+        ],
+        "link":""
+    },
+    {
+        "edition":"1992 Summer Olympics",
+        "city":"☀️ Барселона 1992",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/ESP.png",
+        "coords":[
+            2.1734,
+            41.3851
+        ],
+        "link":""
+    },
+    {
+        "edition":"1994 Winter Olympics",
+        "city":"❄️ Лиллехаммер 1994",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/NOR.png",
+        "coords":[
+            10.4662,
+            61.1153
+        ],
+        "link":""
+    },
+    {
+        "edition":"1996 Summer Olympics",
+        "city":"☀️ Атланта 1996",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/USA.png",
+        "coords":[
+            -84.388,
+            33.749
+        ],
+        "link":""
+    },
+    {
+        "edition":"1998 Winter Olympics",
+        "city":"❄️ Нагано 1998",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/JPN.png",
+        "coords":[
+            137.8821,
+            36.8418
+        ],
+        "link":""
+    },
+    {
+        "edition":"2000 Summer Olympics",
+        "city":"☀️ Сидней 2000",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/AUS.png",
+        "coords":[
+            151.2093,
+            -33.8688
+        ],
+        "link":""
+    },
+    {
+        "edition":"2002 Winter Olympics",
+        "city":"❄️ Солт-Лейк-Сити 2002",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/USA.png",
+        "coords":[
+            -111.891,
+            40.7608
+        ],
+        "link":""
+    },
+    {
+        "edition":"2004 Summer Olympics",
+        "city":"☀️ Афины 2004",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/GRE.png",
+        "coords":[
+            23.7275,
+            37.9838
+        ],
+        "link":""
+    },
+    {
+        "edition":"2006 Winter Olympics",
+        "city":"❄️ Турин 2006",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/ITA.png",
+        "coords":[
+            8.1722,
+            44.8438
+        ],
+        "link":""
+    },
+    {
+        "edition":"2008 Summer Olympics",
+        "city":"☀️ Пекин 2008",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/CHN.png",
+        "coords":[
+            115.5235,
+            39.0203
+        ],
+        "link":""
+    },
+    {
+        "edition":"2010 Winter Olympics",
+        "city":"❄️ Ванкувер 2010",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/CAN.png",
+        "coords":[
+            -123.1207,
+            49.2827
+        ],
+        "link":""
+    },
+    {
+        "edition":"2012 Summer Olympics",
+        "city":"☀️ Лондон 2012",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/GBR.png",
+        "coords":[
+            -0.1276,
+            51.5072
+        ],
+        "link":""
+    },
+    {
+        "edition":"2014 Winter Olympics",
+        "city":"❄️ Сочи 2014",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/RUS.png",
+        "coords":[
+            39.7247,
+            43.5855
+        ],
+        "link":""
+    },
+    {
+        "edition":"2016 Summer Olympics",
+        "city":"☀️ Рио-де-Жанейро 2016",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/BRA.png",
+        "coords":[
+            -43.1729,
+            -22.9068
+        ],
+        "link":""
+    },
+    {
+        "edition":"2018 Winter Olympics",
+        "city":"❄️ Пхёнчхан 2018",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/KOR.png",
+        "coords":[
+            128.3897,
+            37.37
+        ],
+        "link":""
+    },
+    {
+        "edition":"2020 Summer Olympics",
+        "city":"☀️ Токио 2020",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/JPN.png",
+        "coords":[
+            139.9908,
+            35.499
+        ],
+        "link":""
+    },
+    {
+        "edition":"2022 Winter Olympics",
+        "city":"❄️ Пекин 2022",
+        "flag":"https:\/\/olympedia-flags.s3.eu-central-1.amazonaws.com\/CHN.png",
+        "coords":[
+            117.2913,
+            40.7881
+        ],
+        "link":""
+    }
+]
