@@ -1,8 +1,8 @@
 :root {
     --bg-color: #fcf8fb;  /*Цвет фона*/
     --text-color: #1e293b;  /*Цвет текста*/
-    --globe-water: #e0f2fe;  /*Цвет воды*/
-    --globe-land: #dbd1d9;  /* Серый для тех, кто НЕ участвовал*/
+    --globe-water: #e8f4fc;  /*Цвет воды*/
+    --globe-land: #cec8cd;  /* Серый для тех, кто НЕ участвовал*/
     --globe-participant: #f1f8ff; /* Цвет для стран, кто участвовал, но 0 медалей */
     --globe-border: #ffffff;  /*Цвет границ*/
     --globe-outline: #bae6fd;  /*Цвет обводки*/
@@ -12,9 +12,6 @@
     
     --btn-color: #3b82f6;
 }
-/*остальные цвета вместе с другими параметрами ниже: 
-подсветка стран, тултип, города...
-хвост в js*/
 html, body {
     margin: 0;
     padding: 0;
@@ -42,6 +39,15 @@ body {
     margin: 0 auto;
 }
 
+#title-container {
+    position: absolute;
+    text-align: center;
+    top: 2vh;
+    width: 100vw;
+    color: #383838;
+    font-weight: bolder;
+}
+
 .globe-container {
     position: relative;
     width: 100vw;
@@ -61,44 +67,54 @@ body {
 /* Контейнер кнопок */
 .controls-container {
     position: absolute;
-    bottom: 40px; /* Отступ снизу */
+    bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px; /* Чуть увеличили расстояние между кнопками */
-    width: 580px; /* Сделали контейнер чуть шире для длинных названий */
-    max-width: 90vw;
-    z-index: 100; /* Чтобы точно были поверх глобуса */
-}
+    display: flex; /* Работает как flexbox, сетка не нужна */
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
 
-/* Наложение кнопок друг на друга в гриде */
-#btn-dummy-prev, #btn-prev { grid-column: 1; grid-row: 1; width: 100%; box-sizing: border-box; }
-#btn-next, #btn-dummy-next { grid-column: 2; grid-row: 1; width: 100%; box-sizing: border-box; }
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px 16px;
+    border-radius: 35px; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
+    z-index: 100;
+}
 
 /* Основной стиль кнопок (Парящие пилюли) */
 .control-btn {
-    padding: 16px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: inherit;
-    color: #1e293b;
-    background: rgba(255, 255, 255, 0.25); /* Полупрозрачный белый */
-    backdrop-filter: blur(8px); /* Эффект размытия фона (стекло) */
-    -webkit-backdrop-filter: blur(8px);
-    border: 2px solid transparent;
-    border-radius: 50px; /* Сильное скругление */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Мягкая тень */
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Плавная анимация */
-    
-    /* Для выравнивания текста и стрелочек */
+    flex-shrink: 0; /* РЕШЕНИЕ: запрещает кнопкам сжиматься в овалы! */
+    background: transparent;
+    border: none;
+    color: #94a3b8; 
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    width: 44px;  
+    height: 44px;
+    border-radius: 50%; /* Всегда идеальный круг */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Более плавная анимация */
+    padding: 0;
+}
+.control-btn svg {
+    width: 44px; 
+    height: 44px;
+}
+.control-btn:hover:not(:disabled) {
+    background: var(--btn-color);
+    color: #ffffff;
+    transform: translateY(-4px); /* Кнопка приподнимается вверх */
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4); /* Красивое свечение */
 }
 
+.control-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
 /* Эффект при наведении на активную кнопку */
 .control-btn:hover:not(.dummy-btn) {
     background: var(--btn-color); /* Синий цвет */
@@ -109,10 +125,11 @@ body {
 }
 
 /* Эффект при нажатии (клик) */
-.control-btn:active:not(.dummy-btn) {
-    transform: translateY(1px); /* Кнопка прожимается вниз */
+.control-btn:active:not(:disabled) {
+    transform: translateY(1px); /* Прожимается вниз */
     box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
 }
+
 
 /* Стиль для неактивных кнопок (заглушек) */
 .dummy-btn {
@@ -131,21 +148,16 @@ body {
     position: fixed; 
     pointer-events: none;
     z-index: 150; /* Чтобы точно быть поверх всех элементов */
-    transform: translate(15px, 15px); /* Смещение от курсора мыши */
+    transform: translate(8px, 8px); /* Смещение от курсора мыши */
     
     /* Делаем блок компактным */
     min-width: 130px; /* Было 180px */
-    padding: 10px 12px; /* Уменьшили внутренние отступы */
+    padding: 5px 6px; /* Уменьшили внутренние отступы */
     
     /* Эффект матового стекла */
-    background: rgba(255, 255, 255, 0.65); /* Чуть плотнее дашбордов для читаемости */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 10px; /* Аккуратное скругление */
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* Мягкая тень */
+    background: rgb(255, 255, 255);
+    border-radius: 15px; /* Аккуратное скругление */
     
-    transition: opacity 0.15s ease;
 }
 
 /* Скрытое состояние */
@@ -250,22 +262,22 @@ body {
     height: 20px;
     border-radius: 90%;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid rgb(255, 255, 255);
     display: block;
     margin: 12px 0;
 }
 .city-name {
-    background: rgba(220, 220, 220, 0.6); 
-    color: #475569; 
-    font-weight: normal; 
-    padding: 4px 8px;
-    border-radius: 4px; 
+    background: rgb(220, 220, 220); 
+    color: #000000; 
+    font-weight: bolder; 
+    padding: 4px 4px;
+    border-radius: 35px; 
     font-size: 12px; 
     margin-top: -4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
     white-space: nowrap;
-    transition: background 0.3s, color 0.3s, font-weight 0.3s;
     pointer-events: none;
+    opacity: 0.4;
 }
 .host-city.active .host-flag {
     display: none;
@@ -274,15 +286,24 @@ body {
     display: block;
 }
 .host-city.active .city-name {
-    background: rgba(255, 255, 255, 0.9); 
+    background: #ffffff; 
     color: #1e293b; 
     font-weight: bold;
+    opacity: 1;
 }
+
+.host-city.active .city-name,
+.host-city:hover .city-name,
+.host-city:has(.host-flag:hover, .torch-icon:hover) .city-name {
+    opacity: 1;
+    z-index: 100;
+}
+
 .host-flag, .torch-icon {
     cursor: pointer;
 }
 .host-flag:hover, .torch-icon:hover {
-    transform: scale(1.5); 
+    transform: scale(1.5);
 }
 .host-city.active{
     z-index: 100;
@@ -293,61 +314,109 @@ body {
 }
 
 .current-olympic-title {
-    position: absolute;
-    bottom: 110px; 
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    
-    /* Эффект матового стекла */
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
-    padding: 5px 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    
-    /* Текст */
-    font-size: 16px;
-    font-weight: 800; /* Жирный и сочный шрифт */
-    color: #0f172a; /* Очень темный сине-серый цвет */
-    letter-spacing: 0.5px;
-    
-    /* Дополнительные настройки */
-    white-space: nowrap; /* Чтобы текст не переносился на две строки */
-    pointer-events: none; /* Чтобы плашка не мешала крутить глобус под ней */
-    
-    /* Плавное изменение при переключении */
-    transition: all 0.3s ease;
+    flex-shrink: 0; /* РЕШЕНИЕ: Фиксируем ширину заголовка намертво */
+    background: var(--btn-color, #20b2aa); 
+    color: #ffffff;
+    padding: 0 16px;
+    border-radius: 35px;
+    font-weight: 700;
+    font-size: 20px;
+    text-align: center;
+    width: 300px;
+    height: 44px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.title-animate {
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
 }
 /*Барчарты*/
-.dashboard-overlay {
+.toggle-stats-btn {
     position: absolute;
     top: 2vh;
+    left: 2vw;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 35px;
+    padding: 8px 16px;
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-stats-btn:hover {
+    background: #ffffff;
+    color: var(--btn-color, #3b82f6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+}
+
+.toggle-stats-btn svg {
+    width: 18px;
+    height: 18px;
+}
+.toggle-stats-btn svg.hidden {
+    display: none;
+}
+
+.dashboard-overlay {
+    position: absolute;
+    top: calc(2vh + 50px);
     left: 2vw;
     z-index: 50;
     
     display: flex;
     flex-direction: column;
     gap: 1vh;     
-    /* Увеличили ширину панели, чтобы вместить длинные слова */
-    width: 380px; 
+    width: 440px; 
     max-width: 90vw;
     
-    background: rgba(255, 255, 255, 0.40);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
+    background: rgb(255, 255, 255);
+    border-radius: 35px;
     
     padding: 1vh 1vw; 
     
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
     max-height: calc(100vh - 4vh);
     overflow-y: auto;
+    z-index: 200;
+
+    max-height: calc(100vh - 100px); 
+    overflow-y: auto;
+    overflow-x: hidden; /* Запрещаем горизонтальный скролл */
     
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    transform: translateX(0);
+}
+
+.dashboard-overlay::-webkit-scrollbar {
+    width: 5px;
+}
+.dashboard-overlay::-webkit-scrollbar-track {
+    background: transparent;
+}
+.dashboard-overlay::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 35px;
+}
+.dashboard-overlay::-webkit-scrollbar-thumb:hover {
+    background: var(--btn-color);
 }
 
 .dashboard-overlay.hidden {
@@ -361,7 +430,46 @@ body {
     display: flex;
     flex-direction: column;
 }
+.dashboard-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    background: rgba(226, 232, 240, 0.4);
+    padding: 4px;
+    border-radius: 35px;
+}
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    border-radius: 35px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#tab-rus.active {
+    color: #ef4444; /* Красный для России */
+}
+.chart-medal-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+.chart-medal-icon {
+    font-size: 20px;
+}
+.tab-btn:hover {
+    color: #1e293b;
+}
 
+/* Активный таб */
+.tab-btn.active {
+    background: #ffffff;
+    color: var(--btn-color); /* Синий для мира, но в JS мы поменяем цвет для России */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
 /* ОБЩИЙ ЗАГОЛОВОК ДАШБОРДА */
 .dashboard-header {
     margin-bottom: 4px; /* Отступ от заголовка до первого графика */
@@ -424,29 +532,20 @@ svg[id^="chart-"] {
 
 /* Статьи */
 .articles-overlay {
-    top: 2vh;
+    top: calc(2vh + 50px);
     right: 2vw;
-    width: 10vw;
+    width: 440px;
     padding: 1vh 1vw;
     max-height: calc(100vh - 4vh);
 
     position: absolute;
-    z-index: 50;
 
     max-width: 50vw;
     
-    background: rgba(255, 255, 255, 0.40);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-    
-    overflow-y: auto;
-    
-    /* Плавное появление (выезжает справа) */
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    transform: translateX(0);
+    background: rgb(255, 255, 255);
+
+    border-radius: 35px;
+    z-index: 200;
 }
 
 .articles-overlay.hidden {
@@ -460,10 +559,8 @@ svg[id^="chart-"] {
 .article-card {
     display: block;
     text-decoration: none;
-    background: rgba(255, 255, 255, 0.5); /* Полупрозрачный белый фон карточки */
-    border: 1px solid rgba(255, 255, 255, 0.6);
     padding: 0.8vh 0.8vw;
-    border-radius: 0.6vw;
+    border-radius: 35px;
     margin-bottom: 0.8vh;
     transition: all 0.2s ease;
 }
@@ -479,7 +576,7 @@ svg[id^="chart-"] {
 }
 
 .article-title {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-color);
     margin-bottom: 4px;
@@ -487,7 +584,7 @@ svg[id^="chart-"] {
 }
 
 .article-annotation {
-    font-size: 11px;
+    font-size: 14px;
     color: #475569;
     line-height: 1.4;
 }
@@ -533,7 +630,7 @@ svg[id^="chart-"] {
     backdrop-filter: blur(4px);
     color: #1e293b;
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: 35px;
     font-size: 12px;
     font-weight: 800;
     white-space: nowrap;
@@ -550,6 +647,15 @@ svg[id^="chart-"] {
 .special-rus-marker:hover .promo-label {
     background: #ef4444;
     color: #fff;
+}
+
+#about {
+    font-size: smaller;
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    text-align: right;
+    font-style: italic;
 }
 
 /* Анимация левитации */

@@ -46,7 +46,7 @@ const COUNTRY_MAPPER = {
 const TRANSLATIONS = {
     // Исторические и особые команды
     'Unified Team': 'Объединённая команда (бывшие респулики СССР)',
-    'ROC': 'ОКР',
+    'ROC': 'Олимпийский комитет России',
     'Independent Olympic Athletes': 'Независимые олимпийские спортсмены',
     'Czechoslovakia': 'Чехословакия',
     'Serbia and Montenegro': 'Сербия и Черногория',
@@ -154,6 +154,7 @@ const config = {
     outlineColor: style.getPropertyValue('--globe-outline').trim(),
     medalMinColor: style.getPropertyValue('--medal-min-color').trim(),
     medalMaxColor: style.getPropertyValue('--medal-max-color').trim(),
+    globeStrokeColor: style.getPropertyValue('--globe-stroke-color').trim(),
 };
 
 const state = { width: 0, height: 0, dpr: window.devicePixelRatio || 1, baseScale: 1, zoomK: 1 };
@@ -194,25 +195,33 @@ function resizeGlobe() {
     canvas.height = Math.round(state.height * state.dpr);
 
     context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-    state.baseScale = Math.min(state.width, state.height) * 0.96 / 2;
+    state.baseScale = Math.min(state.width, state.height) * 0.75 / 2;
     projection.translate([state.width / 2, state.height / 2]).scale(state.baseScale * state.zoomK);
 }
 
 resizeGlobe();
 window.addEventListener('resize', resizeGlobe);
 
-const btnPrev = document.getElementById('btn-prev');
-const btnNext = document.getElementById('btn-next');
-const btnDummyPrev = document.getElementById('btn-dummy-prev');
-const btnDummyNext = document.getElementById('btn-dummy-next');
+const btnPrev2 = document.getElementById('btn-prev-2');
+const btnPrev1 = document.getElementById('btn-prev-1');
+const btnNext1 = document.getElementById('btn-next-1');
+const btnNext2 = document.getElementById('btn-next-2');
+
+const btnDummyPrev2 = document.getElementById('btn-dummy-prev-2');
+const btnDummyPrev1 = document.getElementById('btn-dummy-prev-1');
+const btnDummyNext1 = document.getElementById('btn-dummy-next-1');
+const btnDummyNext2 = document.getElementById('btn-dummy-next-2');
 
 const tooltip = document.getElementById('tooltip');
 const hostCityMarker = document.getElementById('host-city-marker');
 
 let worldData = null;
+let landMesh = null;
 let olympicsList = [];
 let parsedMedalData = {};
 let barChartData = [];
+let isStatsVisible = true; // Глобальный флаг состояния панелей
+let currentDashboardView = 'world'; // Может быть 'world' или 'russia'
 let articlesData = {};
 let maxMedals = {};
 let rusSpecialElement = null;
@@ -307,6 +316,8 @@ async function init() {
         // ... далее загрузка топологии и медалей (без изменений) ...
         const topology = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
         worldData = topojson.feature(topology, topology.objects.countries);
+
+        landMesh = topojson.mesh(topology, topology.objects.countries, (a, b) => a === b);
         
         const medalData = await d3.json("data/olympicGamesMedalTally.json");
         
@@ -335,7 +346,9 @@ async function init() {
         setupEvents();
         updateUI();
 
-        document.getElementById('chart-container').classList.remove('hidden');
+        if (isStatsVisible) {
+            document.getElementById('chart-container').classList.remove('hidden');
+        }
         renderBarChart(olympicsList[currentIndex].edition);
         renderArticles(olympicsList[currentIndex].edition);
         
@@ -343,10 +356,12 @@ async function init() {
     } catch (e) { console.error("Ошибка:", e); }
 }
 
+// --- ОБНОВЛЕННАЯ ЛОГИКА ОТРИСОВКИ ДАШБОРДА ---
+
 function renderBarChart(selectedEdition) {
     if (!barChartData) return;
 
-    // 1. Определяем имя России для этой версии игр
+    // 1. Определяем имя России для этой олимпиады
     const datasetNames = COUNTRY_MAPPER["Russia"];
     const editionMedals = parsedMedalData[selectedEdition] || {};
     let currentRusName = "Russian Federation";
@@ -354,59 +369,80 @@ function renderBarChart(selectedEdition) {
         if (editionMedals[name]) { currentRusName = name; break; }
     }
     const rusDisplayName = TRANSLATIONS[currentRusName] || currentRusName;
+    
+    // Обновляем текст на кнопке "Россия"
+    document.getElementById("tab-rus").innerText = rusDisplayName;
 
     // 2. Агрегация данных
     const data = barChartData.filter(d => d.edition === selectedEdition);
+    
+    // Группируем по (Вид спорта + Тип: Командный/Индивидуальный)
     const nested = d3.rollup(data, v => {
-        let wT = 0, wM = 0, rT = 0, rM = 0;
+        let wT = 0, wG = 0, wS = 0, wB = 0; // World: Total, Gold, Silver, Bronze
+        let rT = 0, rG = 0, rS = 0, rB = 0; // Russia: Total, Gold, Silver, Bronze
+        
         v.forEach(d => {
-            wT += d.total_participants; wM += d.medalists;
+            // Суммируем для всего мира
+            wT += d.total; wG += d.gold; wS += d.silver; wB += d.bronze;
+            // Суммируем для России
             if (d.country === currentRusName) {
-                rT += d.total_participants; rM += d.medalists;
+                rT += d.total; rG += d.gold; rS += d.silver; rB += d.bronze;
             }
         });
-        return { world: {t: wT, m: wM}, rus: {t: rT, m: rM} };
+        
+        return {
+            isTeamSport: v[0].isTeamSport,
+            world: { t: wT, g: wG, s: wS, b: wB },
+            rus: { t: rT, g: rG, s: rS, b: rB }
+        };
     }, d => d.sport);
 
-    // 3. Формируем ДВА независимых массива данных
-    
-    // Топ-15 для мира (сортировка по кол-ву участников в мире)
-    const worldRows = Array.from(nested, ([sport, values]) => ({ 
-        sport, t: values.world.t, m: values.world.m 
-    }))
-    .filter(d => d.t > 0)
-    .sort((a, b) => d3.descending(a.t, b.t))
-    .slice(0, 15); 
+    // 3. Разделяем на массивы в зависимости от выбранного таба
+    let indRows = [];
+    let teamRows = [];
 
-    // Топ-15 для России (сортировка по кол-ву участников от России)
-    const rusRows = Array.from(nested, ([sport, values]) => ({ 
-        sport, t: values.rus.t, m: values.rus.m 
-    }))
-    .filter(d => d.t > 0)
-    .sort((a, b) => d3.descending(a.t, b.t))
-    .slice(0, 15);
+    Array.from(nested, ([sport, values]) => {
+        // Выбираем данные в зависимости от текущего таба ('world' или 'russia')
+        const stats = currentDashboardView === 'world' ? values.world : values.rus;
+        
+        if (stats.t > 0) {
+            const rowObj = { sport, ...stats };
+            if (values.isTeamSport) teamRows.push(rowObj);
+            else indRows.push(rowObj);
+        }
+    });
 
-    // 4. Обновляем заголовки в HTML
-    document.getElementById("main-title-rus").innerText = rusDisplayName;
-    document.getElementById("rus-section-title").innerText = rusDisplayName;
+    // Сортируем по количеству участников/команд (по убыванию) и берем Топ-15
+    indRows = indRows.sort((a, b) => d3.descending(a.t, b.t)).slice(0, 15);
+    teamRows = teamRows.sort((a, b) => d3.descending(a.t, b.t)).slice(0, 15);
 
-    // 5. Отрисовываем графики независимо друг от друга
-    drawSubChart("#chart-world", worldRows, "#334155", "#60a5fa"); // Синие оттенки для мира
-    drawSubChart("#chart-rus", rusRows, "rgba(239, 68, 68, 0.2)", "#ef4444"); // Красные оттенки для РФ
+    // 4. Цветовые темы
+    const theme = currentDashboardView === 'world' 
+        ? { bg: "rgba(59, 130, 246, 0.15)", fg: "#3b82f6" }  // Синий для мира
+        : { bg: "rgba(239, 68, 68, 0.15)", fg: "#ef4444" };  // Красный для РФ
+
+    // 5. Отрисовываем графики
+    drawSubChart("#chart-ind", indRows, theme);
+    drawSubChart("#chart-team", teamRows, theme);
 }
 
-// Универсальная функция для отрисовки одного барчарта
-function drawSubChart(svgSelector, rows, bgColor, fgColor) {
+// Универсальная функция для отрисовки графиков с выносом медалей
+function drawSubChart(svgSelector, rows, theme) {
     const svg = d3.select(svgSelector);
     
-    // Убрали лишние отступы сверху/снизу, оставили место справа для внешних цифр
-    const margin = { top: 0, right: 25, bottom: 0, left: 150 }; 
-    const rowHeight = 20; 
-    const width = 350;
+    const margin = { top: 0, right: 180, bottom: 0, left: 120 }; 
+    const rowHeight = 28; 
+    const width = 460; 
     
-    const height = Math.max(rows.length * rowHeight + margin.top + margin.bottom, 40);
+    const height = Math.max(rows.length * rowHeight, 30);
 
-    svg.attr("viewBox", [0, 0, width, height]).attr("height", height);
+    // Устанавливаем ширину в 100%, чтобы SVG подстраивался под панель, 
+    // а высоту оставляем фиксированной в пикселях, чтобы работал скролл контейнера
+    svg.attr("viewBox", `0 0 ${width} ${height}`)
+       .style("width", "100%")
+       .style("height", height + "px") // Явно задаем высоту для корректного скролла
+       .attr("height", height);
+    
     svg.selectAll("*").remove();
 
     if (rows.length === 0) {
@@ -414,9 +450,9 @@ function drawSubChart(svgSelector, rows, bgColor, fgColor) {
             .attr("x", width / 2)
             .attr("y", height / 2)
             .attr("text-anchor", "middle")
-            .attr("alignment-baseline", "middle")
-            .attr("fill", "#64748b") // Цвет текста прямо тут
-            .attr("font-size", "12px")
+            .attr("dominant-baseline", "middle")
+            .attr("fill", "#94a3b8")
+            .attr("font-size", "13px")
             .text("Нет данных об участии");
         return;
     }
@@ -427,64 +463,101 @@ function drawSubChart(svgSelector, rows, bgColor, fgColor) {
 
     const y = d3.scaleBand()
         .domain(rows.map(d => d.sport))
-        .range([margin.top, height - margin.bottom])
-        .paddingInner(0.2);
+        .range([0, height])
+        .paddingInner(0.25);
 
     const row = svg.selectAll(".sport-row")
         .data(rows).join("g")
         .attr("transform", d => `translate(0, ${y(d.sport)})`);
 
-    // 1. Название спорта (цвет перенесен из CSS сюда)
+    // 1. Название спорта
     row.append("text")
         .attr("x", margin.left - 8)
         .attr("y", y.bandwidth() / 2)
         .attr("text-anchor", "end")
-        .attr("alignment-baseline", "middle")
-        .attr("fill", "#11151b") // Темный цвет текста
-        .attr("font-size", "11px")
+        .attr("dominant-baseline", "middle") // Заменили на более надежный dominant-baseline
+        .attr("fill", "#1e293b")
+        .attr("font-size", "12px")
         .attr("font-weight", "600")
-        .text(d => d.sport);
+        .text(d => d.sport.length > 18 ? d.sport.substring(0, 16) + '...' : d.sport);
 
-    // 2. Фон (Всего участников - длинная полоса)
+    // 2. Бар (основа)
     row.append("rect")
         .attr("x", margin.left)
         .attr("y", 0)
-        .attr("width", d => Math.max(0, x(d.t) - margin.left))
+        .attr("width", d => Math.max(1, x(d.t) - margin.left))
         .attr("height", y.bandwidth())
-        .attr("fill", bgColor)
-        .attr("rx", 2);
+        .attr("fill", theme.bg)
+        .attr("rx", 4);
 
-    // 3. Медалисты (Заполненная часть)
+    // 3. Линия-индикатор на конце бара
     row.append("rect")
-        .attr("x", margin.left)
+        .attr("x", d => Math.max(margin.left, x(d.t) - 2))
         .attr("y", 0)
-        .attr("width", d => Math.max(0, x(d.m) - margin.left))
+        .attr("width", 2)
         .attr("height", y.bandwidth())
-        .attr("fill", fgColor)
-        .attr("rx", 2);
+        .attr("fill", theme.fg)
+        .attr("rx", 1);
 
-    // 4. ЧИСЛО ВНУТРИ (Медалисты)
+    // 4. ИЗМЕНЕНИЕ 2: Цифра (Всего участников) ВНЕ бара
     row.append("text")
-        .attr("x", d => x(d.m) - 2.5) // Прижимаем к правому краю цветного бара
-        .attr("y", y.bandwidth() / 2 + 3.5) // Центрируем по вертикали
-        .attr("text-anchor", "end")
-        .attr("alignment-baseline", "middle")
-        .attr("fill", "#ffffff") // Белый текст
-        .attr("font-size", "9px")
-        .attr("font-weight", "bold")
-        // Показываем, только если медалистов > 0 и ширина бара > 12px (чтобы цифра влезла)
-        .text(d => (d.m > 0 && (x(d.m) - margin.left) > 12) ? d.m : "");
-
-    // 5. ЧИСЛО СНАРУЖИ (Всего участников)
-    row.append("text")
-        .attr("x", d => x(d.t) + 4) // Выносим правее от края всего бара
-        .attr("y", y.bandwidth() / 2 + 3.5)
+        .attr("x", d => Math.max(margin.left + 2, x(d.t)) + 6) // Сдвигаем вправо за пределы бара
+        .attr("y", y.bandwidth() / 2 + 1)
         .attr("text-anchor", "start")
-        .attr("alignment-baseline", "middle")
-        .attr("fill", "#64748b") // Серый цвет
-        .attr("font-size", "10px")
-        .attr("font-weight", "600")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", "#475569") // Делаем цвет контрастным (темно-серым)
+        .attr("font-size", "11px")
+        .attr("font-weight", "bold")
         .text(d => d.t);
+
+    // 5. БЛОК С МЕДАЛЯМИ СПРАВА
+    // Сдвинули еще правее, чтобы не пересекалось с цифрами участников
+    const medalsGroup = row.append("g")
+        .attr("transform", `translate(${width - margin.right + 35}, ${y.bandwidth() / 2 + 2})`);
+
+    row.each(function(d) {
+        const g = d3.select(this).select("g"); 
+        if (d.g === 0 && d.s === 0 && d.b === 0) {
+            g.append("text")
+                .attr("fill", "#94a3b8")
+                .attr("font-size", "14px")
+                .attr("dominant-baseline", "middle")
+                .attr("x", 10)
+                .text("х");
+        } else {
+            let currentX = 0;
+            
+            // ИЗМЕНЕНИЕ 3: Исправленная логика выравнивания медалей
+            const drawMedal = (icon, value, color) => {
+                if (value > 0) {
+                    // Эмодзи
+                    g.append("text")
+                        .attr("x", currentX)
+                        .attr("y", 0)
+                        .attr("dominant-baseline", "middle")
+                        .attr("class", "chart-medal-icon")
+                        .text(icon);
+                    
+                    currentX += 20; // Фиксированный шаг для иконки
+                    
+                    // Число медалей (сдвинули y на 1px для идеального выравнивания по центру с эмодзи)
+                    g.append("text")
+                        .attr("x", currentX + 5)
+                        .attr("y", 0)
+                        .attr("dominant-baseline", "middle")
+                        .attr("class", "chart-medal-text")
+                        .attr("fill", color)
+                        .text(value);
+                    
+                    currentX += (value.toString().length * 8) + 12; // Динамический шаг для цифр
+                }
+            };
+            
+            drawMedal("🥇", d.g, "#ca8a04"); 
+            drawMedal("🥈", d.s, "#64748b"); 
+            drawMedal("🥉", d.b, "#b45309"); 
+        }
+    });
 }
 
 function renderArticles(selectedEdition) {
@@ -529,7 +602,9 @@ function renderArticles(selectedEdition) {
     container.innerHTML = html;
     
     // Показываем контейнер, если он был скрыт
-    document.getElementById('articles-container').classList.remove('hidden');
+    if (isStatsVisible) {
+        document.getElementById('articles-container').classList.remove('hidden');
+    }
 }
 
 function drawOceanLabels() {
@@ -592,6 +667,15 @@ function drawGlobe() {
         
         context.fill(); context.stroke();
     });
+
+    if (landMesh) {
+        context.beginPath(); 
+        path(landMesh);
+        context.lineWidth = 0.8; 
+        context.strokeStyle = "#000000";
+        context.stroke();
+    }
+
     drawOceanLabels();
 }
 
@@ -731,8 +815,52 @@ function setupEvents() {
 
     canvas.addEventListener('mouseout', () => { hoveredCountry = null; hideTooltip(); });
     
-    btnPrev.addEventListener('click', () => { if (currentIndex > 0) switchOlympic(currentIndex - 1); });
-    btnNext.addEventListener('click', () => { if (currentIndex < olympicsList.length - 1) switchOlympic(currentIndex + 1); });
+    btnPrev2.addEventListener('click', () => { if (currentIndex > 1) switchOlympic(currentIndex - 2); });
+    btnPrev1.addEventListener('click', () => { if (currentIndex > 0) switchOlympic(currentIndex - 1); });
+    btnNext1.addEventListener('click', () => { if (currentIndex < olympicsList.length - 1) switchOlympic(currentIndex + 1); });
+    btnNext2.addEventListener('click', () => { if (currentIndex < olympicsList.length - 2) switchOlympic(currentIndex + 2); });
+
+    document.getElementById('tab-world').addEventListener('click', (e) => {
+        currentDashboardView = 'world';
+        document.getElementById('tab-world').classList.add('active');
+        document.getElementById('tab-rus').classList.remove('active');
+        renderBarChart(olympicsList[currentIndex].edition); // Перерисовываем
+    });
+
+    document.getElementById('tab-rus').addEventListener('click', (e) => {
+        currentDashboardView = 'russia';
+        document.getElementById('tab-rus').classList.add('active');
+        document.getElementById('tab-world').classList.remove('active');
+        renderBarChart(olympicsList[currentIndex].edition); // Перерисовываем
+    });
+
+    const btnToggleStats = document.getElementById('btn-toggle-stats');
+    const iconEyeOpen = document.getElementById('icon-eye-open');
+    const iconEyeClosed = document.getElementById('icon-eye-closed');
+    const toggleStatsText = document.getElementById('toggle-stats-text');
+
+    btnToggleStats.addEventListener('click', () => {
+        isStatsVisible = !isStatsVisible; // Меняем флаг
+        
+        const chartContainer = document.getElementById('chart-container');
+        const articlesContainer = document.getElementById('articles-container');
+
+        if (isStatsVisible) {
+            chartContainer.classList.remove('hidden');
+            if (articlesData && articlesData[olympicsList[currentIndex].edition]) {
+                articlesContainer.classList.remove('hidden');
+            }
+            iconEyeOpen.classList.remove('hidden');
+            iconEyeClosed.classList.add('hidden');
+            toggleStatsText.innerText = 'Скрыть контекст и статистику';
+        } else {
+            chartContainer.classList.add('hidden');
+            articlesContainer.classList.add('hidden');
+            iconEyeOpen.classList.add('hidden');
+            iconEyeClosed.classList.remove('hidden');
+            toggleStatsText.innerText = 'Показать контекст и статистику';
+        }
+    });
 }
 
 function hideTooltip() { tooltip.classList.add('hidden'); }
@@ -740,32 +868,23 @@ function hideTooltip() { tooltip.classList.add('hidden'); }
 function updateUI() {
     if (olympicsList.length === 0) return;
 
-    document.getElementById('current-olympic-title').innerHTML = `${olympicsList[currentIndex].city}`;
+    const titleEl = document.getElementById('current-olympic-title');
+    
+    // Обновляем текст города
+    titleEl.innerHTML = olympicsList[currentIndex].city;
 
-    btnDummyPrev.classList.add('hidden');
-    btnPrev.classList.add('hidden');
-    btnNext.classList.add('hidden');
-    btnDummyNext.classList.add('hidden');
+    // === Запуск красивой анимации ===
+    // Убираем класс, заставляем браузер перерисовать элемент (reflow), и добавляем снова
+    titleEl.classList.remove('title-animate');
+    void titleEl.offsetWidth; 
+    titleEl.classList.add('title-animate');
 
-    // === ЛЕВАЯ КНОПКА (НАЗАД) ===
-    if (currentIndex > 0) {
-        // Добавляем красивую стрелочку влево (&larr;)
-        btnPrev.innerHTML = `&larr; ${olympicsList[currentIndex - 1].city}`;
-        btnPrev.classList.remove('hidden');
-    } else {
-        btnDummyPrev.innerHTML = `&larr; Сеул 1988`; 
-        btnDummyPrev.classList.remove('hidden');
-    }
-
-    // === ПРАВАЯ КНОПКА (ВПЕРЁД) ===
-    if (currentIndex < olympicsList.length - 1) {
-        // Добавляем красивую стрелочку вправо (&rarr;)
-        btnNext.innerHTML = `${olympicsList[currentIndex + 1].city} &rarr;`;
-        btnNext.classList.remove('hidden');
-    } else {
-        btnDummyNext.innerHTML = `Париж 2024 &rarr;`;
-        btnDummyNext.classList.remove('hidden');
-    }
+    // === Управление кнопками (блокируем те, которые выходят за рамки) ===
+    document.getElementById('btn-prev-2').disabled = (currentIndex < 2);
+    document.getElementById('btn-prev-1').disabled = (currentIndex < 1);
+    
+    document.getElementById('btn-next-1').disabled = (currentIndex > olympicsList.length - 2);
+    document.getElementById('btn-next-2').disabled = (currentIndex > olympicsList.length - 3);
 }
 
 function switchOlympic(targetIndex, isDirectClick = false) {

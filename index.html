@@ -12,42 +12,72 @@
 <body>
 
     <div class="app-container">
+        <div id="title-container">Интерактивная карта<br>«Россия и мир Олимпийских игр»</div>
         <div class="globe-container">
+            <button id="btn-toggle-stats" class="toggle-stats-btn" title="Скрыть/Показать">
+                <!-- Иконка "Открытый глаз" -->
+                <svg id="icon-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <!-- Иконка "Закрытый глаз" -->
+                <svg id="icon-eye-closed" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span id="toggle-stats-text">Скрыть контекст и статистику</span>
+            </button>
             <canvas id="globe-canvas"></canvas>
-
+            
             <div id="markers-container"></div>
             
-            <div id="current-olympic-title" class="current-olympic-title"></div>
             <div class="controls-container">
-                <button id="btn-dummy-prev" class="control-btn dummy-btn hidden"></button>
-                <button id="btn-prev" class="control-btn hidden"></button>
-                <button id="btn-next" class="control-btn hidden"></button>
-                <button id="btn-dummy-next" class="control-btn dummy-btn hidden"></button>
+                <!-- На 2 шага назад -->
+                <button id="btn-prev-2" class="control-btn" title="На 2 олимпиады назад">
+                    <svg viewBox="0 0 24 24"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <!-- На 1 шаг назад -->
+                <button id="btn-prev-1" class="control-btn" title="Предыдущая">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <!-- Центральный элемент (активная олимпиада) -->
+                <div id="current-olympic-title" class="current-olympic-title"></div>
+
+                <!-- На 1 шаг вперёд -->
+                <button id="btn-next-1" class="control-btn" title="Следующая">
+                    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <!-- На 2 шага вперёд -->
+                <button id="btn-next-2" class="control-btn" title="На 2 олимпиады вперёд">
+                    <svg viewBox="0 0 24 24"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
             </div>
             <div id="chart-container" class="dashboard-overlay hidden">
                 
-                <!-- ОБЩИЙ ЗАГОЛОВОК ДАШБОРДА -->
                 <div class="dashboard-header">
-                    <div class="main-title">
-                        Участники и медалисты: 
-                        <span class="color-world">весь мир</span> и 
-                        <span id="main-title-rus" class="color-rus">Россия</span>
-                    </div>
-                    <div class="main-subtitle">Сколько спортсменов приехало на Игры и сколько из них уехало с медалями</div>
+                    <div class="main-title">Статистика по видам спорта</div>
+                    <div class="main-subtitle">Отправлено спортсменов/команд и завоевано медалей</div>
                 </div>
 
-                <!-- Блок для всего мира -->
-                <div class="chart-block" id="world-chart-block">
-                    <!-- Маленький заголовок секции -->
-                    <div class="section-label color-world">Весь мир</div>
-                    <svg id="chart-world"></svg>
+                <!-- ТАБЫ: Мир / Россия -->
+                <div class="dashboard-tabs">
+                    <button id="tab-world" class="tab-btn active">Весь мир</button>
+                    <button id="tab-rus" class="tab-btn" id="rus-tab-label">Россия</button>
                 </div>
 
-                <!-- Блок для России/СССР/ОКР -->
-                <div class="chart-block" id="rus-chart-block">
-                    <!-- Маленький заголовок секции (меняется в JS) -->
-                    <div class="section-label color-rus" id="rus-section-title">Россия</div>
-                    <svg id="chart-rus"></svg>
+                <!-- Блок: Индивидуальные виды -->
+                <div class="chart-block" id="ind-chart-block">
+                    <div class="section-label">Индивидуальные виды (чел.)</div>
+                    <svg id="chart-ind"></svg>
+                </div>
+
+                <!-- Блок: Командные виды -->
+                <div class="chart-block" id="team-chart-block" style="margin-top: 15px;">
+                    <div class="section-label">Командные виды (команды)</div>
+                    <svg id="chart-team"></svg>
                 </div>
 
             </div>
@@ -59,7 +89,9 @@
                 <!-- Сюда JS будет вставлять карточки статей -->
                 <div id="articles-content"></div>
             </div>
+            <div id="about">В проекте используется картографическая база Natural Earth (версия 2018 года, масштаб 1:110 млн)</div>
         </div>
+        
 
         <div id="tooltip" class="tooltip hidden">
             <h3 id="tt-country" class="tt-title">Страна</h3>
