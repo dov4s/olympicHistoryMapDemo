@@ -852,13 +852,13 @@ function setupEvents() {
             }
             iconEyeOpen.classList.remove('hidden');
             iconEyeClosed.classList.add('hidden');
-            toggleStatsText.innerText = 'Скрыть контекст и статистику';
+            toggleStatsText.innerText = 'Скрыть статистику и контекст';
         } else {
             chartContainer.classList.add('hidden');
             articlesContainer.classList.add('hidden');
             iconEyeOpen.classList.add('hidden');
             iconEyeClosed.classList.remove('hidden');
-            toggleStatsText.innerText = 'Показать контекст и статистику';
+            toggleStatsText.innerText = 'Показать статистику и контекст';
         }
     });
 }
