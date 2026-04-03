@@ -179,7 +179,7 @@ const RUSSIA_PROMO_MARKER = {
     name: "Россия: вся статистика",
     coords: [100, 60],
     flag: "https://upload.wikimedia.org/wikipedia/en/f/f3/Flag_of_Russia.svg",
-    link: "https://your-link-to-article.com"
+    link: "https://xtaztdtehfn3xtoxaxenj2.streamlit.app/"
 };
 
 const style = getComputedStyle(document.documentElement);
