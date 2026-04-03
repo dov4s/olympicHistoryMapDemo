@@ -3,7 +3,7 @@
     --text-color: #1e293b;  /*Цвет текста*/
     --globe-water: #e8f4fc;  /*Цвет воды*/
     --globe-land: #cec8cd;  /* Серый для тех, кто НЕ участвовал*/
-    --globe-participant: #f1f8ff; /* Цвет для стран, кто участвовал, но 0 медалей */
+    --globe-participant: #bdb7bc; /* Цвет для стран, кто участвовал, но 0 медалей */
     --globe-border: #ffffff;  /*Цвет границ*/
     --globe-outline: #bae6fd;  /*Цвет обводки*/
 
