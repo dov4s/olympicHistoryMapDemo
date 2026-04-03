@@ -122,7 +122,7 @@ const TRANSLATIONS = {
 
 const OCEANS_AND_SEAS =[
     { name: "Тихий океан", coords: [-150, 0], type: "ocean" },
-    { name: "Тихий океан", coords: [160, 0], type: "ocean" }, // Тихий океан огромный, подпишем с двух сторон
+    { name: "Тихий океан", coords: [160, 0], type: "ocean" },
     { name: "Атлантический океан", coords: [-35, 20], type: "ocean" },
     { name: "Атлантический океан", coords: [-20, -25], type: "ocean" },
     { name: "Индийский океан", coords: [80, -20], type: "ocean" },
@@ -335,6 +335,23 @@ async function init() {
                     isParticipant: true
                 };
                 if (total > maxMedals[edition]) maxMedals[edition] = total;
+            }
+        });
+
+        // === ДОБАВЛЯЕМ УЧАСТНИКОВ БЕЗ МЕДАЛЕЙ ИЗ БАРЧАРТОВ ===
+        barChartData.forEach(row => {
+            const edition = row.edition;
+            const country = row.country;
+            if (edition && country && parsedMedalData[edition]) {
+                if (!parsedMedalData[edition][country]) {
+                    // Страна участвовала (отправляла спортсменов), но 0 медалей
+                    parsedMedalData[edition][country] = {
+                        gold: 0, silver: 0, bronze: 0, total: 0, 
+                        isParticipant: true
+                    };
+                } else {
+                    parsedMedalData[edition][country].isParticipant = true;
+                }
             }
         });
 
