@@ -222,6 +222,7 @@ let parsedMedalData = {};
 let barChartData = [];
 let isStatsVisible = true; // Глобальный флаг состояния панелей
 let currentDashboardView = 'world'; // Может быть 'world' или 'russia'
+let selectedCountry = null;
 let articlesData = {};
 let maxMedals = {};
 let rusSpecialElement = null;
@@ -356,7 +357,39 @@ async function init() {
     } catch (e) { console.error("Ошибка:", e); }
 }
 
-// --- ОБНОВЛЕННАЯ ЛОГИКА ОТРИСОВКИ ДАШБОРДА ---
+function updateTabsUI() {
+    const tabWorld = document.getElementById('tab-world');
+    const tabRus = document.getElementById('tab-rus');
+
+    if (currentDashboardView === 'world') {
+        tabWorld.classList.add('active');
+        tabRus.classList.remove('active');
+    } else {
+        tabRus.classList.add('active');
+        tabWorld.classList.remove('active');
+    }
+
+    if (selectedCountry) {
+        const stats = getMedalData(selectedCountry.properties.name, olympicsList[currentIndex].edition);
+        tabWorld.innerHTML = `${stats.teamNameRu} <span class="clear-filter-btn" id="clear-country-filter">✖</span>`;
+        
+        setTimeout(() => {
+            const clearBtn = document.getElementById('clear-country-filter');
+            if (clearBtn) clearBtn.addEventListener('click', (e) => { e.stopPropagation(); clearCountrySelection(); });
+        }, 0);
+    } else {
+        tabWorld.innerHTML = `Весь мир`;
+    }
+}
+
+function clearCountrySelection() {
+    if (selectedCountry) {
+        selectedCountry = null;
+        updateTabsUI();
+        renderBarChart(olympicsList[currentIndex].edition);
+        drawGlobe();
+    }
+}
 
 function renderBarChart(selectedEdition) {
     if (!barChartData) return;
@@ -373,18 +406,23 @@ function renderBarChart(selectedEdition) {
     // Обновляем текст на кнопке "Россия"
     document.getElementById("tab-rus").innerText = rusDisplayName;
 
-    // 2. Агрегация данных
+    let filterCountryName = null;
+    if (selectedCountry) {
+        const stats = getMedalData(selectedCountry.properties.name, selectedEdition);
+        filterCountryName = stats.teamName; 
+    }
+
     const data = barChartData.filter(d => d.edition === selectedEdition);
     
-    // Группируем по (Вид спорта + Тип: Командный/Индивидуальный)
     const nested = d3.rollup(data, v => {
-        let wT = 0, wG = 0, wS = 0, wB = 0; // World: Total, Gold, Silver, Bronze
-        let rT = 0, rG = 0, rS = 0, rB = 0; // Russia: Total, Gold, Silver, Bronze
+        let wT = 0, wG = 0, wS = 0, wB = 0; 
+        let rT = 0, rG = 0, rS = 0, rB = 0; 
         
         v.forEach(d => {
-            // Суммируем для всего мира
-            wT += d.total; wG += d.gold; wS += d.silver; wB += d.bronze;
-            // Суммируем для России
+            // Считаем для "Мира", только если нет фильтра ИЛИ если страна совпадает
+            if (!filterCountryName || d.country === filterCountryName) {
+                wT += d.total; wG += d.gold; wS += d.silver; wB += d.bronze;
+            }
             if (d.country === currentRusName) {
                 rT += d.total; rG += d.gold; rS += d.silver; rB += d.bronze;
             }
@@ -570,32 +608,43 @@ function renderArticles(selectedEdition) {
         return;
     }
 
-    // 1. Формируем HTML для мировой статьи
+    // 1. Статьи по миру
     let html = `
         <div class="article-group">
             <div class="section-label color-world" style="margin-top: 8px;">Мир</div>
-            <a href="${data.world.link}" target="_blank" class="article-card">
-                <div class="article-title">${data.world.title}</div>
-                <div class="article-annotation">${data.world.annotation}</div>
-            </a>
-        </div>
+            <div class="world-articles-list">
     `;
 
-    // 2. Формируем HTML для статей по России
+    if (Array.isArray(data.world)) {
+        data.world.forEach(art => {
+            html += `
+                <a href="${art.link}" target="_blank" class="article-card">
+                    <div class="article-title">${art.title}</div>
+                    <div class="article-annotation">${art.annotation}</div>
+                </a>
+            `;
+        });
+    }
+    
+    html += `</div></div>`;
+
+    // 2. Статьи по России (ВОТ ЭТОТ БЛОК МЫ ВЕРНУЛИ)
     html += `
         <div class="article-group">
             <div class="section-label color-rus" style="margin-top: 16px;">Россия</div>
             <div class="rus-articles-list">
     `;
 
-    data.russia.forEach(art => {
-        html += `
-            <a href="${art.link}" target="_blank" class="article-card">
-                <div class="article-title">${art.title}</div>
-                <div class="article-annotation">${art.annotation}</div>
-            </a>
-        `;
-    });
+    if (Array.isArray(data.russia)) {
+        data.russia.forEach(art => {
+            html += `
+                <a href="${art.link}" target="_blank" class="article-card">
+                    <div class="article-title">${art.title}</div>
+                    <div class="article-annotation">${art.annotation}</div>
+                </a>
+            `;
+        });
+    }
 
     html += `</div></div>`;
     
@@ -657,9 +706,11 @@ function drawGlobe() {
         if (stats.total > 0) fillColor = colorScale(stats.total);
         else if (stats.isParticipant) fillColor = config.participantColor;
 
-        if (feature === hoveredCountry) {
+        if (feature === selectedCountry || feature === hoveredCountry) {
             context.fillStyle = d3.color(fillColor).brighter(0.4);
-            context.lineWidth = 1.5; context.strokeStyle = "#1e293b"; 
+            // Если кликнута — делаем линию толще
+            context.lineWidth = feature === selectedCountry ? 2.5 : 1.5; 
+            context.strokeStyle = "#1e293b"; 
         } else {
             context.fillStyle = fillColor;
             context.lineWidth = 0.5; context.strokeStyle = config.borderColor;
@@ -780,25 +831,17 @@ function setupEvents() {
         if (isAnimating) return;
         const rect = canvas.getBoundingClientRect();
         const coords = projection.invert([event.clientX - rect.left, event.clientY - rect.top]);
-        if (!coords) { hoveredCountry = null; canvas.style.cursor = 'grab'; return; }
+        
+        if (!coords) { hoveredCountry = null; hideTooltip(); canvas.style.cursor = 'grab'; return; }
 
-        hoveredCountry = worldData.features.find(f => d3.geoContains(f, coords));
-        canvas.style.cursor = hoveredCountry ? 'pointer' : 'grab';
-    });
+        const newHovered = worldData.features.find(f => d3.geoContains(f, coords));
+        
+        if (newHovered) {
+            hoveredCountry = newHovered;
+            canvas.style.cursor = 'pointer';
 
-    canvas.addEventListener('click', (event) => {
-        if (isAnimating || olympicsList.length === 0) return;
-        const rect = canvas.getBoundingClientRect();
-        const coords = projection.invert([event.clientX - rect.left, event.clientY - rect.top]);
-        if (!coords) { hideTooltip(); return; }
-
-        const clickedCountry = worldData.features.find(f => d3.geoContains(f, coords));
-        if (clickedCountry) {
-            const mapName = clickedCountry.properties.name;
-            // Передаем .edition (например, "2008 Summer Olympics"), чтобы достать данные нужного года
+            const mapName = hoveredCountry.properties.name;
             const stats = getMedalData(mapName, olympicsList[currentIndex].edition);
-            
-            // Если перевода нет, он выведет английское название (на всякий случай)
             const displayName = stats.teamNameRu; 
             
             document.getElementById('tt-country').innerText = stats.isParticipant ? displayName : displayName + " (Нет данных)";
@@ -810,7 +853,30 @@ function setupEvents() {
             tooltip.classList.remove('hidden');
             tooltip.style.left = `${event.clientX}px`;
             tooltip.style.top = `${event.clientY}px`;
-        } else { hideTooltip(); }
+        } else {
+            hoveredCountry = null;
+            hideTooltip();
+            canvas.style.cursor = 'grab';
+        }
+    });
+
+    canvas.addEventListener('click', (event) => {
+        if (isAnimating || olympicsList.length === 0) return;
+        const rect = canvas.getBoundingClientRect();
+        const coords = projection.invert([event.clientX - rect.left, event.clientY - rect.top]);
+        
+        if (!coords) { clearCountrySelection(); return; }
+
+        const clickedCountry = worldData.features.find(f => d3.geoContains(f, coords));
+        if (clickedCountry) {
+            selectedCountry = clickedCountry;
+            currentDashboardView = 'world'; 
+            updateTabsUI();
+            renderBarChart(olympicsList[currentIndex].edition);
+            drawGlobe();
+        } else { 
+            clearCountrySelection();
+        }
     });
 
     canvas.addEventListener('mouseout', () => { hoveredCountry = null; hideTooltip(); });
@@ -821,17 +887,17 @@ function setupEvents() {
     btnNext2.addEventListener('click', () => { if (currentIndex < olympicsList.length - 2) switchOlympic(currentIndex + 2); });
 
     document.getElementById('tab-world').addEventListener('click', (e) => {
-        currentDashboardView = 'world';
-        document.getElementById('tab-world').classList.add('active');
-        document.getElementById('tab-rus').classList.remove('active');
-        renderBarChart(olympicsList[currentIndex].edition); // Перерисовываем
+        if(e.target.id !== 'clear-country-filter') {
+            currentDashboardView = 'world';
+            updateTabsUI();
+            renderBarChart(olympicsList[currentIndex].edition);
+        }
     });
 
     document.getElementById('tab-rus').addEventListener('click', (e) => {
         currentDashboardView = 'russia';
-        document.getElementById('tab-rus').classList.add('active');
-        document.getElementById('tab-world').classList.remove('active');
-        renderBarChart(olympicsList[currentIndex].edition); // Перерисовываем
+        updateTabsUI();
+        renderBarChart(olympicsList[currentIndex].edition);
     });
 
     const btnToggleStats = document.getElementById('btn-toggle-stats');
@@ -888,6 +954,8 @@ function updateUI() {
 }
 
 function switchOlympic(targetIndex, isDirectClick = false) {
+    clearCountrySelection();
+    
     if (isAnimating || currentIndex === targetIndex) return;
 
     if (isDirectClick) {

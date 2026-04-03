@@ -530,6 +530,26 @@ svg[id^="chart-"] {
     background: rgba(148, 163, 184, 0.6);
 }
 
+/*Кнопка отключения фильтра по стране*/
+.clear-filter-btn {
+    margin-left: 6px;
+    color: #ef4444;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    transition: all 0.2s ease;
+}
+.clear-filter-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
 /* Статьи */
 .articles-overlay {
     top: calc(2vh + 50px);
