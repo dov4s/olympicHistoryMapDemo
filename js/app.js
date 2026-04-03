@@ -504,9 +504,9 @@ function renderBarChart(selectedEdition) {
         }
     });
 
-    // Сортируем по количеству участников/команд (по убыванию) и берем Топ-15
-    indRows = indRows.sort((a, b) => d3.descending(a.t, b.t)).slice(0, 15);
-    teamRows = teamRows.sort((a, b) => d3.descending(a.t, b.t)).slice(0, 15);
+    // Сортируем по количеству участников/команд
+    indRows = indRows.sort((a, b) => d3.descending(a.t, b.t));
+    teamRows = teamRows.sort((a, b) => d3.descending(a.t, b.t));
 
     // 4. Цветовые темы
     const theme = currentDashboardView === 'world' 
