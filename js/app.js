@@ -448,7 +448,7 @@ function clearCountrySelection() {
 function renderBarChart(selectedEdition) {
     if (!barChartData) return;
 
-    // 1. Определяем имя России для этой олимпиады
+    // 1. Определяем имя России для этой олимпиады (оставляем для текста на кнопке)
     const datasetNames = COUNTRY_MAPPER["Russia"];
     const editionMedals = parsedMedalData[selectedEdition] || {};
     let currentRusName = "Russian Federation";
@@ -460,10 +460,12 @@ function renderBarChart(selectedEdition) {
     // Обновляем текст на кнопке "Россия"
     document.getElementById("tab-rus").innerText = rusDisplayName;
 
-    let filterCountryName = null;
+    // 2. ИСПРАВЛЕНИЕ: Теперь мы храним не одно имя, а МАССИВ всех имен выбранной страны
+    let filterCountryNames = null;
     if (selectedCountry) {
-        const stats = getMedalData(selectedCountry.properties.name, selectedEdition);
-        filterCountryName = stats.teamName; 
+        const topoName = selectedCountry.properties.name;
+        // Берем все возможные псевдонимы кликнутой страны
+        filterCountryNames = COUNTRY_MAPPER[topoName] || [topoName];
     }
 
     const data = barChartData.filter(d => d.edition === selectedEdition);
@@ -473,11 +475,13 @@ function renderBarChart(selectedEdition) {
         let rT = 0, rG = 0, rS = 0, rB = 0; 
         
         v.forEach(d => {
-            // Считаем для "Мира", только если нет фильтра ИЛИ если страна совпадает
-            if (!filterCountryName || d.country === filterCountryName) {
+            // ИСПРАВЛЕНИЕ 1: Для вкладки "Мир" (или выбранной страны) проверяем вхождение в массив
+            if (!filterCountryNames || filterCountryNames.includes(d.country)) {
                 wT += d.total; wG += d.gold; wS += d.silver; wB += d.bronze;
             }
-            if (d.country === currentRusName) {
+            
+            // ИСПРАВЛЕНИЕ 2: Для вкладки "Россия" проверяем, входит ли страна в массив datasetNames (ROC, Unified Team и тд)
+            if (datasetNames.includes(d.country)) {
                 rT += d.total; rG += d.gold; rS += d.silver; rB += d.bronze;
             }
         });
@@ -504,7 +508,7 @@ function renderBarChart(selectedEdition) {
         }
     });
 
-    // Сортируем по количеству участников/команд
+    // Сортируем по количеству участников/команд (выводим все, без .slice)
     indRows = indRows.sort((a, b) => d3.descending(a.t, b.t));
     teamRows = teamRows.sort((a, b) => d3.descending(a.t, b.t));
 
