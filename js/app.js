@@ -19,11 +19,11 @@ const COUNTRY_MAPPER = {
     "Dominican Rep.": ["Dominican Republic"],
     "Iran": ["Islamic Republic of Iran"],
     
-    "Russia":["Russian Federation", "ROC", "Unified Team"],
+    "Russia":["Russian Federation", "ROC", "Unified Team", "Russian Olympic Committee"],
     "Czechia": ["Czechia", "Czechoslovakia"],
     "Slovakia":["Slovakia", "Czechoslovakia"],
     
-    "Serbia": ["Serbia", "Serbia and Montenegro"],
+    "Serbia": ["Serbia", "Serbia and Montenegro", "Yugoslavia"],
     "Montenegro":["Montenegro", "Serbia and Montenegro"],
     "Kosovo": ["Kosovo", "Serbia and Montenegro"],
 
@@ -39,17 +39,35 @@ const COUNTRY_MAPPER = {
     "Kyrgyzstan": ["Kyrgyzstan", "Unified Team"],
     "Tajikistan": ["Tajikistan", "Unified Team"],
     "Armenia":["Armenia", "Unified Team"],
-    "Turkmenistan": ["Turkmenistan", "Unified Team"]
+    "Turkmenistan": ["Turkmenistan", "Unified Team"],
+
+    // --- ДОБАВЛЕННЫЕ ИЗ КРОСС-ПРОВЕРКИ ---
+    "Bosnia and Herz.": ["Bosnia and Herzegovina"],
+    "Brunei": ["Brunei Darussalam"],
+    "Central African Rep.": ["Central African Republic"],
+    "Dem. Rep. Congo": ["Democratic Republic of the Congo"],
+    "Eq. Guinea": ["Equatorial Guinea"],
+    "eSwatini": ["Eswatini"],
+    "Guinea-Bissau": ["Guinea Bissau"],
+    "Laos": ["Lao People's Democratic Republic"],
+    "Solomon Is.": ["Solomon Islands"],
+    "S. Sudan": ["South Sudan"],
+    "Gambia": ["The Gambia"],
+    "Tanzania": ["United Republic of Tanzania"]
 };
 
 // Полный словарь перевода всех стран, территорий и исторических команд
 const TRANSLATIONS = {
     // Исторические и особые команды
-    'Unified Team': 'Объединённая команда (бывшие респулики СССР)',
+    'Unified Team': 'Объединённая команда',
     'ROC': 'Олимпийский комитет России',
+    'Russian Olympic Committee': 'Олимпийский комитет России',
     'Independent Olympic Athletes': 'Независимые олимпийские спортсмены',
     'Czechoslovakia': 'Чехословакия',
     'Serbia and Montenegro': 'Сербия и Черногория',
+    'Yugoslavia': 'Югославия',
+    'Korea Team': 'Объединённая команда Кореи',
+    'Refugee Olympic Team': 'Сборная беженцев',
 
     // Страны с особыми/длинными названиями в датасете
     "People's Republic of China": 'Китай',
@@ -66,8 +84,33 @@ const TRANSLATIONS = {
     'Syrian Arab Republic': 'Сирия',
     'Republic of Moldova': 'Молдова',
     'Kingdom of Saudi Arabia': 'Саудовская Аравия',
+    'Bosnia and Herzegovina': 'Босния и Герцеговина',
+    'Brunei Darussalam': 'Бруней',
+    'Central African Republic': 'ЦАР',
+    'Democratic Republic of the Congo': 'ДР Конго',
+    'Equatorial Guinea': 'Экваториальная Гвинея',
+    "Lao People's Democratic Republic": 'Лаос',
+    'United Republic of Tanzania': 'Танзания',
+    'United States Virgin Islands': 'Виргинские Острова (США)',
+    'British Virgin Islands': 'Британские Виргинские Острова',
+    'The Gambia': 'Гамбия',
 
-    // Общий список стран из датасета и карты
+    // Острова и микрогосударства (которых нет на глобусе, но есть в статистике)
+    'American Samoa': 'Американское Самоа', 'Andorra': 'Андорра', 'Antigua and Barbuda': 'Антигуа и Барбуда',
+    'Aruba': 'Аруба', 'Bahrain': 'Бахрейн', 'Barbados': 'Барбадос', 'Bermuda': 'Бермудские Острова',
+    'Cabo Verde': 'Кабо-Верде', 'Cayman Islands': 'Каймановы острова', 'Comoros': 'Коморы',
+    'Cook Islands': 'Острова Кука', 'Dominica': 'Доминика', 'Eswatini': 'Эсватини',
+    'Federated States of Micronesia': 'Микронезия', 'Grenada': 'Гренада', 'Guam': 'Гуам',
+    'Guinea Bissau': 'Гвинея-Бисау', 'Kiribati': 'Кирибати', 'Liechtenstein': 'Лихтенштейн',
+    'Maldives': 'Мальдивы', 'Malta': 'Мальта', 'Marshall Islands': 'Маршалловы Острова',
+    'Mauritius': 'Маврикий', 'Monaco': 'Монако', 'Nauru': 'Науру', 'Netherlands Antilles': 'Нид. Антильские острова',
+    'Palau': 'Палау', 'Saint Kitts and Nevis': 'Сент-Китс и Невис', 'Saint Lucia': 'Сент-Люсия',
+    'Saint Vincent and the Grenadines': 'Сент-Винсент и Гренадины', 'Samoa': 'Самоа',
+    'San Marino': 'Сан-Марино', 'Seychelles': 'Сейшелы', 'Singapore': 'Сингапур',
+    'Solomon Islands': 'Соломоновы Острова', 'South Sudan': 'Южный Судан', 'São Tomé and Príncipe': 'Сан-Томе и Принсипи',
+    'Tonga': 'Тонга', 'Tuvalu': 'Тувалу',
+
+    // Общий список стран...
     'Germany': 'Германия', 'Cuba': 'Куба', 'Spain': 'Испания', 'Hungary': 'Венгрия', 
     'France': 'Франция', 'Australia': 'Австралия', 'Canada': 'Канада', 'Italy': 'Италия', 
     'Romania': 'Румыния', 'Japan': 'Япония', 'Bulgaria': 'Болгария', 'Poland': 'Польша', 
@@ -85,23 +128,20 @@ const TRANSLATIONS = {
     'Ukraine': 'Украина', 'Czechia': 'Чехия', 'Kazakhstan': 'Казахстан', 'Belarus': 'Беларусь', 
     'Slovakia': 'Словакия', 'Armenia': 'Армения', 'Portugal': 'Португалия', 'Burundi': 'Бурунди', 
     'Costa Rica': 'Коста-Рика', 'Ecuador': 'Эквадор', 'Uzbekistan': 'Узбекистан', 'Azerbaijan': 'Азербайджан', 
-    'Tonga': 'Тонга', 'Zambia': 'Замбия', 'Georgia': 'Грузия', 'Trinidad and Tobago': 'Тринидад и Тобаго', 
+    'Zambia': 'Замбия', 'Georgia': 'Грузия', 'Trinidad and Tobago': 'Тринидад и Тобаго', 
     'India': 'Индия', 'Mozambique': 'Мозамбик', 'Tunisia': 'Тунис', 'Uganda': 'Уганда', 
     'Cameroon': 'Камерун', 'Sri Lanka': 'Шри-Ланка', 'Uruguay': 'Уругвай', 'Vietnam': 'Вьетнам', 
-    'Barbados': 'Барбадос', 'Chile': 'Чили', 'Iceland': 'Исландия', 'Kuwait': 'Кувейт', 
+    'Chile': 'Чили', 'Iceland': 'Исландия', 'Kuwait': 'Кувейт', 
     'Kyrgyzstan': 'Кыргызстан', 'North Macedonia': 'Северная Македония', 'Macedonia': 'Северная Македония',
     'Egypt': 'Египет', 'Zimbabwe': 'Зимбабве', 'Dominican Republic': 'Доминиканская Республика', 
     'Dominican Rep.': 'Доминиканская Республика', 'United Arab Emirates': 'ОАЭ', 'Paraguay': 'Парагвай', 
     'Venezuela': 'Венесуэла', 'Eritrea': 'Эритрея', 'Panama': 'Панама', 'Serbia': 'Сербия', 
-    'Tajikistan': 'Таджикистан', 'Samoa': 'Самоа', 'Singapore': 'Сингапур', 'Sudan': 'Судан', 
-    'Afghanistan': 'Афганистан', 'Mauritius': 'Маврикий', 'Togo': 'Того', 'Bahrain': 'Бахрейн', 
-    'Grenada': 'Гренада', 'Botswana': 'Ботсвана', 'Cyprus': 'Кипр', 'Gabon': 'Габон', 
-    'Guatemala': 'Гватемала', 'Montenegro': 'Черногория', "Côte d'Ivoire": 'Кот-д’Ивуар', 'Fiji': 'Фиджи', 
-    'Jordan': 'Иордания', 'Kosovo': 'Косово', 'Niger': 'Нигер', 'Bermuda': 'Бермудские Острова', 
-    'San Marino': 'Сан-Марино', 'Turkmenistan': 'Туркменистан', 'Burkina Faso': 'Буркина-Фасо', 
-    'Luxembourg': 'Люксембург', 'Liechtenstein': 'Лихтенштейн',
+    'Tajikistan': 'Таджикистан', 'Sudan': 'Судан', 'Afghanistan': 'Афганистан', 'Togo': 'Того',
+    'Cyprus': 'Кипр', 'Gabon': 'Габон', 'Guatemala': 'Гватемала', 'Montenegro': 'Черногория', 
+    "Côte d'Ivoire": 'Кот-д’Ивуар', 'Fiji': 'Фиджи', 'Jordan': 'Иордания', 'Kosovo': 'Косово', 
+    'Niger': 'Нигер', 'Turkmenistan': 'Туркменистан', 'Burkina Faso': 'Буркина-Фасо', 'Luxembourg': 'Люксембург',
 
-    // Дополнительные страны с глобуса (которых нет в медальном зачете, но на них можно кликнуть)
+    // Дополнительные страны с глобуса...
     'Tanzania': 'Танзания', 'W. Sahara': 'Западная Сахара', 'Papua New Guinea': 'Папуа — Новая Гвинея', 
     'Dem. Rep. Congo': 'ДР Конго', 'Somalia': 'Сомали', 'Chad': 'Чад', 'Haiti': 'Гаити', 
     'Falkland Is.': 'Фолклендские острова', 'Greenland': 'Гренландия', 'Fr. S. Antarctic Lands': 'Французские Южные территории', 
@@ -109,15 +149,12 @@ const TRANSLATIONS = {
     'Honduras': 'Гондурас', 'El Salvador': 'Сальвадор', 'Belize': 'Белиз', 'Guyana': 'Гайана', 
     'Senegal': 'Сенегал', 'Mali': 'Мали', 'Mauritania': 'Мавритания', 'Benin': 'Бенин', 'Guinea': 'Гвинея', 
     'Guinea-Bissau': 'Гвинея-Бисау', 'Liberia': 'Либерия', 'Sierra Leone': 'Сьерра-Леоне', 
-    'Central African Rep.': 'ЦАР', 'Congo': 'Республика Конго', 'Eq. Guinea': 'Экваториальная Гвинея', 
-    'Malawi': 'Малави', 'eSwatini': 'Эсватини', 'Angola': 'Ангола', 'Lebanon': 'Ливан', 
-    'Madagascar': 'Мадагаскар', 'Palestine': 'Палестина', 'Gambia': 'Гамбия', 'Iraq': 'Ирак', 
-    'Oman': 'Оман', 'Vanuatu': 'Вануату', 'Cambodia': 'Камбоджа', 'Laos': 'Лаос', 'Myanmar': 'Мьянма', 
-    'Bangladesh': 'Бангладеш', 'Bhutan': 'Бутан', 'Nepal': 'Непал', 'Albania': 'Албания', 
-    'New Caledonia': 'Новая Каледония', 'Solomon Is.': 'Соломоновы Острова', 'Brunei': 'Бруней', 
+    'Congo': 'Республика Конго', 'Malawi': 'Малави', 'Angola': 'Ангола', 'Lebanon': 'Ливан', 
+    'Madagascar': 'Мадагаскар', 'Palestine': 'Палестина', 'Iraq': 'Ирак', 'Oman': 'Оман', 
+    'Vanuatu': 'Вануату', 'Cambodia': 'Камбоджа', 'Myanmar': 'Мьянма', 'Bangladesh': 'Бангладеш', 
+    'Bhutan': 'Бутан', 'Nepal': 'Непал', 'Albania': 'Албания', 'New Caledonia': 'Новая Каледония', 
     'Yemen': 'Йемен', 'Antarctica': 'Антарктида', 'N. Cyprus': 'Северный Кипр', 'Libya': 'Ливия', 
-    'Djibouti': 'Джибути', 'Somaliland': 'Сомалиленд', 'Rwanda': 'Руанда', 'Bosnia and Herz.': 'Босния и Герцеговина', 
-    'S. Sudan': 'Южный Судан', 'Taiwan': 'Тайвань', 'Russia': 'Россия', 'China': 'Китай'
+    'Djibouti': 'Джибути', 'Somaliland': 'Сомалиленд', 'Rwanda': 'Руанда', 'Taiwan': 'Тайвань'
 };
 
 const OCEANS_AND_SEAS =[
